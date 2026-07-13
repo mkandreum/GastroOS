@@ -10,6 +10,19 @@ import { createServer as createViteServer } from "vite";
 import { dbInstance, hashPassword } from "./server/db";
 import crypto from "crypto";
 import { Order, OrderLine, PrinterConfig, OrderStatus, TicketTemplate } from "./src/types";
+import webpush from "web-push";
+
+// Configurar VAPID para Web Push Notifications
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
+const VAPID_EMAIL = process.env.VAPID_EMAIL || "mailto:admin@gastro-os.local";
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  console.log("[WebPush] VAPID configurado correctamente.");
+} else {
+  console.warn("[WebPush] VAPID keys no configuradas. Las notificaciones push estarán deshabilitadas.");
+}
 
 // Capturar errores no manejados para diagnóstico en producción
 process.on("uncaughtException", (err) => {
@@ -896,6 +909,22 @@ app.post("/api/orders", (req, res) => {
 
   broadcastEvent("order:created", { id: createdOrder.id, tableId: createdOrder.tableId, status: createdOrder.status });
 
+  // Notificación push a camareros cuando llega un nuevo pedido del cliente
+  const orderTable = dbInstance.getTableById(createdOrder.tableId);
+  const tableName = orderTable?.name || createdOrder.tableId;
+  const itemsSummary = processedLines.slice(0, 3).map(l => `${l.quantity}x ${l.name}`).join(", ");
+  const moreItems = processedLines.length > 3 ? ` +${processedLines.length - 3} más` : "";
+  sendPushToRole("camarero", {
+    title: `🍽️ Nuevo pedido — ${tableName}`,
+    body: `${itemsSummary}${moreItems}`,
+    tag: `new-order-${createdOrder.tableId}`,
+    requireInteraction: false,
+    vibrate: [150, 50, 150],
+    url: "/",
+    type: "new_order",
+    tableId: createdOrder.tableId
+  });
+
   res.status(201).json(createdOrder);
 });
 
@@ -1276,6 +1305,26 @@ app.post("/api/waiter-calls", (req, res) => {
   
   const call = dbInstance.addWaiterCall({ tableId, tableName, reason });
   broadcastEvent("waiter_call_new", call);
+
+  // Notificación push a todos los camareros registrados
+  const reasonLabels: Record<string, string> = {
+    cuenta: "💳 Solicita la cuenta",
+    ayuda: "🙋 Necesita ayuda",
+    cubiertos: "🍴 Pide cubiertos",
+    limpieza: "🧹 Solicita limpieza",
+    duda: "❓ Tiene una pregunta"
+  };
+  sendPushToRole("camarero", {
+    title: `🛎️ Llamada — ${tableName}`,
+    body: reasonLabels[reason] || reason,
+    tag: `waiter-call-${tableId}`,
+    requireInteraction: true,
+    vibrate: [300, 100, 300, 100, 300],
+    url: "/",
+    type: "waiter_call",
+    tableId
+  });
+
   res.status(201).json(call);
 });
 
@@ -1288,6 +1337,53 @@ app.put("/api/waiter-calls/:id/resolve", requireStaff, (req, res) => {
     res.status(404).json({ error: "Llamada no encontrada o ya resuelta" });
   }
 });
+
+// 11b. WEB PUSH SUBSCRIPTIONS
+app.get("/api/push/vapid-public-key", (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post("/api/push/subscribe", requireStaff, (req, res) => {
+  const { subscription, role } = req.body;
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return res.status(400).json({ error: "Suscripción inválida" });
+  }
+  const user = (req as any).user;
+  dbInstance.savePushSubscription(user?.id || "unknown", role || user?.role || "camarero", subscription);
+  console.log(`[WebPush] Suscripción guardada para ${user?.username} (${role})`);
+  res.json({ success: true });
+});
+
+app.post("/api/push/unsubscribe", (req, res) => {
+  const { endpoint } = req.body;
+  if (endpoint) dbInstance.deletePushSubscription(endpoint);
+  res.json({ success: true });
+});
+
+// Helper: send push to all devices of a role
+async function sendPushToRole(role: string, payload: object) {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+  const subs = dbInstance.getPushSubscriptionsByRole(role);
+  const payloadStr = JSON.stringify(payload);
+  const results = await Promise.allSettled(
+    subs.map(sub =>
+      webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payloadStr
+      ).catch(err => {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          // Subscription expired - remove it
+          dbInstance.deletePushSubscription(sub.endpoint);
+        }
+        throw err;
+      })
+    )
+  );
+  const failed = results.filter(r => r.status === "rejected").length;
+  if (subs.length > 0) {
+    console.log(`[WebPush] Sent to ${subs.length - failed}/${subs.length} ${role} subscriptions`);
+  }
+}
 
 // 12. OPERACIONES SOBRE LA CUENTA DE LA MESA (SWIPE ACTIONS)
 app.delete("/api/tables/:tableId/bill/items", requireStaff, (req, res) => {

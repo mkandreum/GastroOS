@@ -195,6 +195,16 @@ class LocalDatabase {
           status TEXT,
           timestamp TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+          id TEXT PRIMARY KEY,
+          userId TEXT,
+          role TEXT,
+          endpoint TEXT UNIQUE,
+          p256dh TEXT,
+          auth TEXT,
+          createdAt TEXT
+        );
       `);
 
       // Tabla de plantilla de ticket personalizable
@@ -1243,6 +1253,30 @@ class LocalDatabase {
       });
     })();
     return true;
+  }
+
+  // === Web Push Subscriptions ===
+
+  public savePushSubscription(userId: string, role: string, subscription: { endpoint: string; keys: { p256dh: string; auth: string } }): void {
+    const id = uid("push");
+    db.prepare(`
+      INSERT INTO push_subscriptions (id, userId, role, endpoint, p256dh, auth, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(endpoint) DO UPDATE SET userId = excluded.userId, role = excluded.role, p256dh = excluded.p256dh, auth = excluded.auth
+    `).run(id, userId, role, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth, new Date().toISOString());
+  }
+
+  public deletePushSubscription(endpoint: string): void {
+    db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+  }
+
+  public getPushSubscriptionsByRole(role: string): Array<{ endpoint: string; p256dh: string; auth: string }> {
+    const rows = db.prepare("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE role = ?").all(role) as any[];
+    return rows;
+  }
+
+  public getAllPushSubscriptions(): Array<{ endpoint: string; p256dh: string; auth: string; role: string }> {
+    return db.prepare("SELECT endpoint, p256dh, auth, role FROM push_subscriptions").all() as any[];
   }
 }
 

@@ -8,13 +8,14 @@ import {
   motion, AnimatePresence 
 } from "motion/react";
 import { 
-  Clock, CheckCircle, Table as TableIcon, DollarSign, Split, Info, Bell, X, Check, Users, ShoppingCart, Loader2, Printer, Trash, MessageSquare
+  Clock, CheckCircle, Table as TableIcon, DollarSign, Split, Info, Bell, BellOff, X, Check, Users, ShoppingCart, Loader2, Printer, Trash, MessageSquare
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import ConfirmDialog from "./ConfirmDialog";
 import { useConfirm } from "./useConfirm";
 import { authHeaders } from "./api";
 import { Table, Receipt, ReceiptLine, Order, OrderLine, OrderStatus, Product, WaiterCall } from "../types";
+import { usePushNotifications } from "../utils/usePushNotifications";
 
 // Utilidades de feedback háptico y sonoro
 const triggerHaptic = () => {
@@ -91,6 +92,13 @@ export default function CamareroView() {
   const [closingBill, setClosingBill] = useState(false);
   const { toast } = useToast();
   const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+
+  // Web Push Notifications
+  const authToken = localStorage.getItem("auth_token");
+  const { status: pushStatus, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushNotifications({
+    role: "camarero",
+    authToken
+  });
 
   useEffect(() => {
     fetchTablesAndOrders();
@@ -535,26 +543,53 @@ export default function CamareroView() {
             <span>🤵 Panel de Camareros</span>
           </h1>
         </div>
-        <button
-          onClick={async () => {
-            try {
-              const res = await fetch("/api/closed-receipts");
-              if (res.ok) {
-                const all = await res.json();
-                setClosedTickets(all);
-                setModifyTicketMode(true);
-                setAdminPassword("");
-                setAdminAuthError("");
-                setAuthSuccess(false);
-                setSelectedTicket(null);
-              }
-            } catch (err) { console.error(err); toast("Error de comunicación con el servidor.", "error"); }
-          }}
-          className="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-3 py-2 rounded-xl border border-indigo-200 cursor-pointer transition flex items-center space-x-1"
-        >
-          <span>✏️</span>
-          <span>Modificar Tickets</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* Push notification toggle */}
+          {pushStatus !== "unsupported" && (
+            <button
+              onClick={pushStatus === "subscribed" ? unsubscribePush : subscribePush}
+              title={pushStatus === "subscribed" ? "Notificaciones activas — pulsa para desactivar" : "Activar notificaciones push"}
+              className={`text-[11px] font-bold px-3 py-2 rounded-xl border cursor-pointer transition flex items-center space-x-1.5 ${
+                pushStatus === "subscribed"
+                  ? "bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200"
+                  : pushStatus === "denied"
+                  ? "bg-red-100 text-red-600 border-red-200 cursor-not-allowed opacity-70"
+                  : "bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-200 animate-pulse"
+              }`}
+              disabled={pushStatus === "denied" || pushStatus === "requesting"}
+            >
+              {pushStatus === "subscribed" ? (
+                <><Bell className="w-3.5 h-3.5" /><span>Notif. ON</span></>
+              ) : pushStatus === "denied" ? (
+                <><BellOff className="w-3.5 h-3.5" /><span>Bloqueado</span></>
+              ) : pushStatus === "requesting" ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Activando...</span></>
+              ) : (
+                <><Bell className="w-3.5 h-3.5" /><span>Activar Notif.</span></>
+              )}
+            </button>
+          )}
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/closed-receipts");
+                if (res.ok) {
+                  const all = await res.json();
+                  setClosedTickets(all);
+                  setModifyTicketMode(true);
+                  setAdminPassword("");
+                  setAdminAuthError("");
+                  setAuthSuccess(false);
+                  setSelectedTicket(null);
+                }
+              } catch (err) { console.error(err); toast("Error de comunicación con el servidor.", "error"); }
+            }}
+            className="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-3 py-2 rounded-xl border border-indigo-200 cursor-pointer transition flex items-center space-x-1"
+          >
+            <span>✏️</span>
+            <span>Modificar Tickets</span>
+          </button>
+        </div>
       </div>
 
       {/* SECCIÓN DE LLAMADAS ACTIVAS DE MESAS */}
