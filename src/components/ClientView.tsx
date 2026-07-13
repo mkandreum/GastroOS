@@ -298,20 +298,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
       const res = await fetch(`/api/orders?tableId=${tableId}`);
       if (res.ok) {
         const orders = await res.json();
-        // Filtrar pedidos para nuestra mesa
-        const filtered = orders.filter(
-          (o: any) => o.tableId === tableId
-        );
-        // Si hay sesión activa, filtrar por ella; si no, mostrar todos (pedidos recién creados)
-        if (tableInfo?.activeSessionId) {
-          setMyOrders(filtered.filter((o: any) => o.sessionId === tableInfo.activeSessionId));
-        } else if (filtered.length > 0) {
-          // Mantener órdenes existentes aunque la sesión no esté activa aún
-          setMyOrders(prev => {
-            const merged = [...filtered.filter((f: any) => !prev.some(p => p.id === f.id)), ...prev];
-            return merged;
-          });
-        }
+        setMyOrders(orders);
       }
     } catch (err) {
       console.error(err); toast("Error al consultar tus pedidos.", "error");

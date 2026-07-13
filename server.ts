@@ -765,14 +765,17 @@ app.get("/api/orders", (req, res) => {
   let orders = dbInstance.getOrders();
   const { tableId, status } = req.query as { tableId?: string; status?: string };
   
-  if (APP_TYPE === "client") {
-    if (!tableId) {
-      return res.status(400).json({ error: "Falta el parámetro tableId para la consulta pública de comandas." });
+  if (tableId) {
+    const table = dbInstance.getTableById(tableId);
+    if (table) {
+      if (table.activeSessionId) {
+        orders = orders.filter(o => o.tableId === tableId && o.sessionId === table.activeSessionId);
+      } else {
+        orders = [];
+      }
+    } else {
+      orders = orders.filter(o => o.tableId === tableId);
     }
-    orders = orders.filter(o => o.tableId === tableId);
-  } else {
-    // Para modo administración/barra/cocina se permiten filtros opcionales
-    if (tableId) orders = orders.filter(o => o.tableId === tableId);
   }
   
   if (status) orders = orders.filter(o => o.status === status);
