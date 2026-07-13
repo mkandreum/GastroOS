@@ -675,6 +675,62 @@ app.put("/api/tables/:id/position", requireStaff, (req, res) => {
   }
 });
 
+// 2b. ASIGNACIÓN DE CAMARERO A MESA
+app.post("/api/tables/:id/assign", requireStaff, (req, res) => {
+  const { id } = req.params;
+  const authUser = (req as any).user;
+  if (!authUser) return res.status(401).json({ error: "No autenticado" });
+
+  const users = dbInstance.getUsers();
+  const userProfile = users.find(u => u.id === authUser.sub);
+  if (!userProfile) return res.status(401).json({ error: "Usuario no encontrado" });
+
+  const table = dbInstance.getTableById(id);
+  if (!table) return res.status(404).json({ error: "Mesa no encontrada" });
+
+  const updated = dbInstance.updateTable(id, {
+    assignedWaiterId: userProfile.id,
+    assignedWaiterName: userProfile.name
+  });
+
+  broadcastEvent("table:assigned", {
+    tableId: id,
+    tableName: table.name,
+    waiterId: userProfile.id,
+    waiterName: userProfile.name
+  });
+
+  console.log(`[Waiter] ${userProfile.name} assigned to table ${table.name}`);
+  res.json({ success: true, table: updated });
+});
+
+app.post("/api/tables/:id/unassign", requireStaff, (req, res) => {
+  const { id } = req.params;
+  const table = dbInstance.getTableById(id);
+  if (!table) return res.status(404).json({ error: "Mesa no encontrada" });
+
+  const updated = dbInstance.updateTable(id, {
+    assignedWaiterId: null,
+    assignedWaiterName: null
+  });
+
+  broadcastEvent("table:unassigned", {
+    tableId: id,
+    tableName: table.name
+  });
+
+  res.json({ success: true, table: updated });
+});
+
+app.get("/api/auth/me", requireStaff, (req, res) => {
+  const authUser = (req as any).user;
+  const users = dbInstance.getUsers();
+  const userProfile = users.find(u => u.id === authUser.sub);
+  if (!userProfile) return res.status(404).json({ error: "Usuario no encontrado" });
+  const { passwordHash, ...safe } = userProfile;
+  res.json(safe);
+});
+
 // 3. CATEGORÍAS
 app.get("/api/categories", (req, res) => {
   res.json(dbInstance.getCategories());
@@ -935,10 +991,41 @@ app.put("/api/orders/:id/status", requireStaff, (req, res) => {
   const updated = dbInstance.updateOrderStatus(req.params.id, status as OrderStatus);
   if (updated) {
     broadcastEvent("order:status_changed", { id: updated.id, status: updated.status });
+
+    // Cuando un pedido pasa a "listo", notificar push al camarero asignado a la mesa
+    if (status === "listo") {
+      const table = dbInstance.getTableById(updated.tableId);
+      if (table?.assignedWaiterId) {
+        sendPushToRole("camarero", {
+          title: `🍽️ Pedido listo - ${updated.tableName}`,
+          body: `Los platos de la ${updated.tableName} están listos para servir`,
+          tag: `order_ready_${updated.id}`,
+          requireInteraction: true,
+          vibrate: [300, 100, 300],
+          url: "/",
+          type: "order_ready",
+          orderId: updated.id,
+          tableId: updated.tableId
+        });
+      }
+    }
+
     res.json(updated);
   } else {
     res.status(404).json({ error: "Pedido no encontrado" });
   }
+});
+
+// Confirmación de pedido listo (para SSE polling desde camarero)
+app.get("/api/orders/:id/confirm", (req, res) => {
+  const order = dbInstance.getOrderById(req.params.id);
+  if (!order) return res.status(404).json({ error: "Pedido no encontrado" });
+  res.json({
+    orderId: order.id,
+    status: order.status,
+    tableId: order.tableId,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 6. DETALLES DE CUENTA Y CIERRE

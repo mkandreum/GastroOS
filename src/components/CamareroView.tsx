@@ -8,14 +8,15 @@ import {
   motion, AnimatePresence 
 } from "motion/react";
 import { 
-  Clock, CheckCircle, Table as TableIcon, DollarSign, Split, Info, Bell, BellOff, X, Check, Users, ShoppingCart, Loader2, Printer, Trash, MessageSquare
+  Clock, CheckCircle, Table as TableIcon, DollarSign, Split, Info, Bell, BellOff, X, Check, Users, ShoppingCart, Loader2, Printer, Trash, MessageSquare, UserPlus, UserX
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import ConfirmDialog from "./ConfirmDialog";
 import { useConfirm } from "./useConfirm";
 import { authHeaders } from "./api";
-import { Table, Receipt, ReceiptLine, Order, OrderLine, OrderStatus, Product, WaiterCall } from "../types";
+import { Table, Receipt, ReceiptLine, Order, OrderLine, OrderStatus, Product, WaiterCall, User } from "../types";
 import { usePushNotifications } from "../utils/usePushNotifications";
+import { useSSE } from "./useSSE";
 
 // Utilidades de feedback háptico y sonoro
 const triggerHaptic = () => {
@@ -100,11 +101,78 @@ export default function CamareroView() {
     authToken
   });
 
+  // Usuario actual (camarero logueado)
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me", { headers: authHeaders() });
+      if (res.ok) {
+        setCurrentUser(await res.json());
+      }
+    } catch { /* ignore */ }
+  };
+
+  // Asignarse a una mesa
+  const handleAssignTable = async (table: Table) => {
+    try {
+      const res = await fetch(`/api/tables/${table.id}/assign`, {
+        method: "POST",
+        headers: authHeaders()
+      });
+      if (res.ok) {
+        toast(`Mesa ${table.name} asignada a ti`, "success");
+        fetchTablesAndOrders();
+      } else {
+        toast("Error al asignar mesa", "error");
+      }
+    } catch {
+      toast("Error de red", "error");
+    }
+  };
+
+  // Desasignarse de una mesa
+  const handleUnassignTable = async (table: Table) => {
+    try {
+      const res = await fetch(`/api/tables/${table.id}/unassign`, {
+        method: "POST",
+        headers: authHeaders()
+      });
+      if (res.ok) {
+        toast(`Mesa ${table.name} liberada`, "info");
+        fetchTablesAndOrders();
+      } else {
+        toast("Error al liberar mesa", "error");
+      }
+    } catch {
+      toast("Error de red", "error");
+    }
+  };
+
   useEffect(() => {
     fetchTablesAndOrders();
+    fetchCurrentUser();
     const interval = setInterval(fetchTablesAndOrders, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // SSE para eventos en tiempo real
+  useSSE({
+    "tables_updated": () => { fetchTablesAndOrders(); },
+    "orders_updated": () => { fetchTablesAndOrders(); },
+    "order:status_changed": (data: any) => {
+      if (data?.status === "listo") {
+        triggerHaptic();
+        playNotificationSound();
+      }
+      fetchTablesAndOrders();
+    },
+    "order:created": () => { fetchTablesAndOrders(); },
+    "table:assigned": () => { fetchTablesAndOrders(); },
+    "table:unassigned": () => { fetchTablesAndOrders(); },
+    "waiter_call_new": () => { fetchTablesAndOrders(); },
+    "waiter_call_resolved": () => { fetchTablesAndOrders(); }
+  });
 
   // Push notification cuando llegan nuevos platos listos
   useEffect(() => {
@@ -544,31 +612,20 @@ export default function CamareroView() {
           </h1>
         </div>
         <div className="flex items-center space-x-2">
-          {/* Push notification toggle */}
-          {pushStatus !== "unsupported" && (
-            <button
-              onClick={pushStatus === "subscribed" ? unsubscribePush : subscribePush}
-              title={pushStatus === "subscribed" ? "Notificaciones activas — pulsa para desactivar" : "Activar notificaciones push"}
-              className={`text-[11px] font-bold px-3 py-2 rounded-xl border cursor-pointer transition flex items-center space-x-1.5 ${
-                pushStatus === "subscribed"
-                  ? "bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200"
-                  : pushStatus === "denied"
-                  ? "bg-red-100 text-red-600 border-red-200 cursor-not-allowed opacity-70"
-                  : "bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-200 animate-pulse"
-              }`}
-              disabled={pushStatus === "denied" || pushStatus === "requesting"}
-            >
-              {pushStatus === "subscribed" ? (
-                <><Bell className="w-3.5 h-3.5" /><span>Notif. ON</span></>
-              ) : pushStatus === "denied" ? (
-                <><BellOff className="w-3.5 h-3.5" /><span>Bloqueado</span></>
-              ) : pushStatus === "requesting" ? (
-                <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Activando...</span></>
-              ) : (
-                <><Bell className="w-3.5 h-3.5" /><span>Activar Notif.</span></>
-              )}
-            </button>
-          )}
+          {/* Indicador automático de notificaciones push */}
+          {pushStatus === "subscribed" ? (
+            <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl border bg-emerald-100 text-emerald-700 border-emerald-200 flex items-center space-x-1.5">
+              <Bell className="w-3.5 h-3.5" /><span>Notif.</span>
+            </span>
+          ) : pushStatus === "denied" ? (
+            <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl border bg-red-100 text-red-600 border-red-200 flex items-center space-x-1.5">
+              <BellOff className="w-3.5 h-3.5" /><span>Bloqueado</span>
+            </span>
+          ) : pushStatus === "requesting" ? (
+            <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl border bg-amber-100 text-amber-700 border-amber-200 flex items-center space-x-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Notif...</span>
+            </span>
+          ) : null}
           <button
             onClick={async () => {
               try {
@@ -680,9 +737,13 @@ export default function CamareroView() {
                     const isOccupied = table.status === "ocupada";
                     const isPending = table.status === "pendiente_pago";
                     const hasCall = waiterCalls.some(c => c.tableId === String(table.number) || c.tableId === table.id);
+                    const isMyTable = currentUser && table.assignedWaiterId === currentUser.id;
+                    const isOthersTable = table.assignedWaiterId && table.assignedWaiterId !== currentUser?.id;
 
                     const bgColor = hasCall
                       ? "bg-amber-400 border-amber-500 animate-pulse hover:bg-amber-500"
+                      : isMyTable
+                      ? "bg-indigo-100 border-indigo-400 border-3 hover:bg-indigo-200"
                       : isFree
                       ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
                       : isOccupied
@@ -691,6 +752,8 @@ export default function CamareroView() {
 
                     const statusColor = hasCall
                       ? "bg-red-600 text-white font-extrabold"
+                      : isMyTable
+                      ? "bg-indigo-500 text-white"
                       : isFree
                       ? "bg-emerald-200 text-emerald-800"
                       : isOccupied
@@ -698,30 +761,50 @@ export default function CamareroView() {
                       : "bg-sky-200 text-sky-800";
 
                     return (
-                      <button
-                        key={table.id}
-                        onClick={() => loadActiveBill(table)}
-                        className={`absolute select-none ${bgColor} border-2 rounded-2xl cursor-pointer active:scale-95 transition-all duration-150`}
-                        style={{
-                          left: table.posX,
-                          top: table.posY,
-                          width: 130,
-                          height: 90
-                        }}
-                      >
+                      <div key={table.id} className="absolute" style={{ left: table.posX, top: table.posY, width: 130, height: 110 }}>
+                        {isMyTable && (
+                          <span className="absolute -top-1.5 -left-1.5 bg-indigo-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full shadow z-10 border border-white">
+                            Tu mesa
+                          </span>
+                        )}
+                        {isOthersTable && (
+                          <span className="absolute -top-1.5 -left-1.5 bg-slate-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full shadow z-10 border border-white">
+                            {table.assignedWaiterName}
+                          </span>
+                        )}
                         {hasCall && (
                           <span className="absolute -top-2.5 -right-2.5 bg-red-600 border border-white text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-md animate-bounce z-10">
                             🛎️
                           </span>
                         )}
-                        <div className="flex flex-col items-center justify-center h-full p-1">
-                          <span className={`text-xs font-mono font-bold ${hasCall ? "text-amber-950" : "text-slate-500"}`}>#{table.number}</span>
-                          <span className={`font-extrabold text-xs text-center leading-tight ${hasCall ? "text-slate-950" : "text-slate-800"}`}>{table.name}</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 ${statusColor}`}>
-                            {hasCall ? "LLAMADA" : isFree ? "Libre" : isOccupied ? `${table.currentBillTotal.toFixed(1)}€` : "Pago"}
-                          </span>
-                        </div>
-                      </button>
+                        <button
+                          onClick={() => loadActiveBill(table)}
+                          className={`select-none w-full h-[90px] ${bgColor} border-2 rounded-2xl cursor-pointer active:scale-95 transition-all duration-150`}
+                        >
+                          <div className="flex flex-col items-center justify-center h-full p-1">
+                            <span className={`text-xs font-mono font-bold ${hasCall ? "text-amber-950" : isMyTable ? "text-indigo-600" : "text-slate-500"}`}>#{table.number}</span>
+                            <span className={`font-extrabold text-xs text-center leading-tight ${hasCall ? "text-slate-950" : isMyTable ? "text-indigo-800" : "text-slate-800"}`}>{table.name}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 ${statusColor}`}>
+                              {hasCall ? "LLAMADA" : isFree ? "Libre" : isMyTable ? "Tu mesa" : isOccupied ? `${table.currentBillTotal.toFixed(1)}€` : "Pago"}
+                            </span>
+                          </div>
+                        </button>
+                        {isMyTable ? (
+                          <button
+                            onClick={() => handleUnassignTable(table)}
+                            className="mt-0.5 text-[8px] bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold px-1 py-0.5 rounded w-full cursor-pointer"
+                          >
+                            Liberar
+                          </button>
+                        ) : (isOccupied && !isOthersTable) ? (
+                          <button
+                            onClick={() => handleAssignTable(table)}
+                            className="mt-0.5 text-[8px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-1 py-0.5 rounded w-full cursor-pointer"
+                          >
+                            Tomar
+                          </button>
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
@@ -733,9 +816,13 @@ export default function CamareroView() {
                   const isOccupied = table.status === "ocupada";
                   const isPending = table.status === "pendiente_pago";
                   const hasCall = waiterCalls.some(c => c.tableId === String(table.number) || c.tableId === table.id);
+                  const isMyTable = currentUser && table.assignedWaiterId === currentUser.id;
+                  const isOthersTable = table.assignedWaiterId && table.assignedWaiterId !== currentUser?.id;
 
                   const borderClass = hasCall
                     ? "bg-amber-400 border-amber-500 animate-pulse hover:bg-amber-500"
+                    : isMyTable
+                    ? "bg-indigo-50 border-indigo-300 border-2 hover:bg-indigo-100"
                     : isFree
                     ? "bg-emerald-50/70 hover:bg-emerald-100 border-emerald-200 hover:border-emerald-300"
                     : isOccupied
@@ -744,41 +831,76 @@ export default function CamareroView() {
 
                   const statusBadge = hasCall
                     ? "bg-red-600 text-white font-extrabold"
+                    : isMyTable
+                    ? "bg-indigo-500 text-white"
                     : isFree
                     ? "bg-emerald-200 text-emerald-800"
                     : isOccupied
                     ? "bg-amber-200 text-amber-800"
                     : "bg-sky-200 text-sky-800";
 
+                  const canTakeOver = isOccupied && !isMyTable && !isOthersTable;
+
                   return (
-                    <button
-                      key={table.id}
-                      onClick={() => loadActiveBill(table)}
-                      className={`min-h-[44px] p-3 rounded-xl text-left border flex flex-col justify-between h-24 relative cursor-pointer active:scale-95 transition duration-150 ${borderClass}`}
-                      id={`table_button_${table.id}`}
-                    >
+                    <div key={table.id} className="relative">
+                      {isMyTable && (
+                        <span className="absolute -top-1.5 -left-1.5 bg-indigo-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow z-10 border border-white flex items-center space-x-0.5">
+                          <UserPlus className="w-2.5 h-2.5" /><span>Tu mesa</span>
+                        </span>
+                      )}
+                      {isOthersTable && (
+                        <span className="absolute -top-1.5 -left-1.5 bg-slate-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow z-10 border border-white">
+                          {table.assignedWaiterName}
+                        </span>
+                      )}
                       {hasCall && (
                         <span className="absolute -top-2 -right-2 bg-red-600 border border-white text-white text-[10px] w-6.5 h-6.5 rounded-full flex items-center justify-center font-bold shadow-md animate-bounce z-10">
                           🛎️
                         </span>
                       )}
-                      <div>
-                        <span className={`text-[11px] font-mono font-bold ${hasCall ? "text-amber-950" : "text-slate-500"}`}>#{table.number}</span>
-                        <h4 className={`font-extrabold text-sm mt-0.5 ${hasCall ? "text-slate-950" : "text-slate-800"}`}>{table.name}</h4>
-                      </div>
+                      <button
+                        key={table.id}
+                        onClick={() => loadActiveBill(table)}
+                        className={`min-h-[44px] p-3 rounded-xl text-left border flex flex-col justify-between h-24 w-full relative cursor-pointer active:scale-95 transition duration-150 ${borderClass}`}
+                        id={`table_button_${table.id}`}
+                      >
+                        <div>
+                          <span className={`text-[11px] font-mono font-bold ${hasCall ? "text-amber-950" : isMyTable ? "text-indigo-600" : "text-slate-500"}`}>#{table.number}</span>
+                          <h4 className={`font-extrabold text-sm mt-0.5 ${hasCall ? "text-slate-950" : isMyTable ? "text-indigo-800" : "text-slate-800"}`}>{table.name}</h4>
+                        </div>
 
-                      <div className="flex justify-between items-end w-full">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded leading-none ${statusBadge}`}>
-                          {hasCall ? "Llamada" : isFree ? "Libre" : isOccupied ? "Ocupada" : "Plato listo"}
-                        </span>
-
-                        {!isFree && (
-                          <span className={`font-extrabold text-xs mt-1 block ${hasCall ? "text-slate-950" : "text-slate-900"}`}>
-                            {table.currentBillTotal.toFixed(2)}€
+                        <div className="flex justify-between items-end w-full">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded leading-none ${statusBadge}`}>
+                            {hasCall ? "Llamada" : isFree ? "Libre" : isMyTable ? "Asignada" : isOccupied ? "Ocupada" : "Plato listo"}
                           </span>
-                        )}
+
+                          {!isFree && (
+                            <span className={`font-extrabold text-xs mt-1 block ${hasCall ? "text-slate-950" : "text-slate-900"}`}>
+                              {table.currentBillTotal.toFixed(2)}€
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      <div className="mt-1 flex justify-center">
+                        {isMyTable ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleUnassignTable(table); }}
+                            className="text-[9px] bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold px-2 py-1 rounded-md w-full cursor-pointer"
+                            title="Liberar mesa"
+                          >
+                            <UserX className="w-2.5 h-2.5 inline mr-0.5" /> Liberar
+                          </button>
+                        ) : canTakeOver ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAssignTable(table); }}
+                            className="text-[9px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-2 py-1 rounded-md w-full cursor-pointer"
+                            title="Tomar mesa"
+                          >
+                            <UserPlus className="w-2.5 h-2.5 inline mr-0.5" /> Tomar mesa
+                          </button>
+                        ) : null}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

@@ -30,6 +30,8 @@ export interface Table {
   posY: number; // Posición Y en el mapa del salón
   width?: number; // Ancho en píxeles para el editor de diseño
   height?: number; // Alto en píxeles para el editor de diseño
+  assignedWaiterId?: string | null; // ID del camarero que ha tomado la mesa
+  assignedWaiterName?: string | null; // Nombre del camarero asignado
 }
 
 // Concepto de categoría gastronómica

@@ -25,30 +25,7 @@ export function usePushNotifications({ role = "camarero", authToken }: UsePushNo
   const [status, setStatus] = useState<PushStatus>("idle");
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
 
-  // Register service worker on mount
-  useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setStatus("unsupported");
-      return;
-    }
-    navigator.serviceWorker.register("/sw.js", { scope: "/" })
-      .then(reg => {
-        console.log("[SW] Registered:", reg.scope);
-        return reg.pushManager.getSubscription();
-      })
-      .then(existing => {
-        if (existing) {
-          setSubscription(existing);
-          setStatus("subscribed");
-        }
-      })
-      .catch(err => {
-        console.error("[SW] Registration error:", err);
-        setStatus("error");
-      });
-  }, []);
-
-  const subscribe = useCallback(async () => {
+  const doSubscribe = useCallback(async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setStatus("unsupported");
       return;
@@ -57,13 +34,15 @@ export function usePushNotifications({ role = "camarero", authToken }: UsePushNo
     setStatus("requesting");
 
     try {
-      const permission = await Notification.requestPermission();
+      let permission = Notification.permission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+      }
       if (permission !== "granted") {
         setStatus("denied");
         return;
       }
 
-      // Fetch VAPID public key from server
       const keyRes = await fetch("/api/push/vapid-public-key");
       const { publicKey } = await keyRes.json();
       if (!publicKey) {
@@ -77,7 +56,6 @@ export function usePushNotifications({ role = "camarero", authToken }: UsePushNo
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      // Send subscription to server
       const headers: HeadersInit = { "Content-Type": "application/json" };
       if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
 
@@ -95,6 +73,34 @@ export function usePushNotifications({ role = "camarero", authToken }: UsePushNo
       setStatus("error");
     }
   }, [role, authToken]);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setStatus("unsupported");
+      return;
+    }
+    navigator.serviceWorker.register("/sw.js", { scope: "/" })
+      .then(reg => {
+        console.log("[SW] Registered:", reg.scope);
+        return reg.pushManager.getSubscription();
+      })
+      .then(existing => {
+        if (existing) {
+          setSubscription(existing);
+          setStatus("subscribed");
+        } else if (Notification.permission === "granted") {
+          return doSubscribe();
+        }
+      })
+      .catch(err => {
+        console.error("[SW] Registration error:", err);
+        setStatus("error");
+      });
+  }, []);
+
+  const subscribe = useCallback(async () => {
+    await doSubscribe();
+  }, [doSubscribe]);
 
   const unsubscribe = useCallback(async () => {
     if (!subscription) return;

@@ -8,13 +8,15 @@ import {
   motion, AnimatePresence 
 } from "motion/react";
 import { 
-  UtensilsCrossed, Clock, Check, CookingPot, AlertCircle, FileText, Download, Copy, Play, RefreshCw, X, Printer
+  UtensilsCrossed, Clock, Check, CookingPot, AlertCircle, FileText, Download, Copy, Play, RefreshCw, X, Printer, User
 } from "lucide-react";
-import { Order, OrderLine, OrderStatus } from "../types";
+import { Order, OrderLine, OrderStatus, Table } from "../types";
 import { useToast } from "./ToastProvider";
+import { useSSE } from "./useSSE";
 
 export default function ChefView() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [selectedZplOrder, setSelectedZplOrder] = useState<Order | null>(null);
   const [selectedZplText, setSelectedZplText] = useState("");
   const [copyFeedback, setCopyFeedback] = useState(false);
@@ -23,6 +25,12 @@ export default function ChefView() {
   const { toast } = useToast();
   const [isHighContrast, setIsHighContrast] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Obtener el camarero asignado a una mesa, si lo hay
+  const getAssignedWaiter = (tableId: string): string | null => {
+    const table = tables.find(t => t.id === tableId);
+    return table?.assignedWaiterName || null;
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -138,6 +146,15 @@ export default function ChefView() {
     return () => clearInterval(interval);
   }, []);
 
+  // SSE para eventos en tiempo real
+  useSSE({
+    "order:created": () => { fetchChefOrders(); },
+    "order:status_changed": () => { fetchChefOrders(); },
+    "tables_updated": () => { fetchChefOrders(); },
+    "table:assigned": () => { fetchChefOrders(); },
+    "table:unassigned": () => { fetchChefOrders(); }
+  });
+
   useEffect(() => {
     const pending = orders.filter(o => o.status === "pendiente").length;
     if (pending > prevPendingCount && prevPendingCount > 0) {
@@ -155,18 +172,21 @@ export default function ChefView() {
 
   const fetchChefOrders = async () => {
     try {
-      const res = await fetch("/api/orders");
-      if (res.ok) {
-        const list: Order[] = await res.json();
+      const [resOrd, resTab] = await Promise.all([
+        fetch("/api/orders"),
+        fetch("/api/tables")
+      ]);
+      if (resOrd.ok) {
+        const list: Order[] = await resOrd.json();
         
-        // El chef gestiona pedidos con artículos de cocina. Filtramos los que estén:
-        // 'pendiente' o 'en_preparacion'
-        // Además, filtramos que la orden contenga al menos un plato de COMIDA (destination !== "bar")
         const chefFiltered = list.filter(o => 
           (o.status === "pendiente" || o.status === "en_preparacion" || o.status === "listo") &&
           o.items.some(line => line.destination === "cocina")
         );
         setOrders(chefFiltered);
+      }
+      if (resTab.ok) {
+        setTables(await resTab.json());
       }
     } catch (err) {
       console.error(err);
@@ -320,6 +340,14 @@ export default function ChefView() {
                         <span className="text-xs bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-md text-[11px]">
                           {order.tableName}
                         </span>
+                        {(() => {
+                          const waiterName = getAssignedWaiter(order.tableId);
+                          return waiterName ? (
+                            <span className="ml-1.5 text-[10px] bg-indigo-500 text-white font-bold px-1.5 py-0.5 rounded-md">
+                              <User className="w-2.5 h-2.5 inline mr-0.5" />{waiterName}
+                            </span>
+                          ) : null;
+                        })()}
                         <p className="text-[10px] font-mono text-slate-400 mt-1">ID: #{order.id.slice(-5).toUpperCase()}</p>
                       </div>
 
@@ -425,6 +453,14 @@ export default function ChefView() {
                         <span className="text-xs bg-indigo-600 text-white font-black px-2 py-0.5 rounded-md text-[11px]">
                           {order.tableName}
                         </span>
+                        {(() => {
+                          const waiterName = getAssignedWaiter(order.tableId);
+                          return waiterName ? (
+                            <span className="ml-1.5 text-[10px] bg-indigo-500 text-white font-bold px-1.5 py-0.5 rounded-md">
+                              <User className="w-2.5 h-2.5 inline mr-0.5" />{waiterName}
+                            </span>
+                          ) : null;
+                        })()}
                         <p className="text-[10px] font-mono text-slate-400 mt-1">ID: #{order.id.slice(-5).toUpperCase()}</p>
                       </div>
                       
@@ -517,6 +553,14 @@ export default function ChefView() {
                       <span className="text-xs bg-emerald-600 text-white font-extrabold px-1.5 py-0.5 rounded">
                         {order.tableName}
                       </span>
+                      {(() => {
+                        const waiterName = getAssignedWaiter(order.tableId);
+                        return waiterName ? (
+                          <span className="ml-1.5 text-[10px] bg-indigo-500 text-white font-bold px-1.5 py-0.5 rounded">
+                            <User className="w-2.5 h-2.5 inline mr-0.5" />{waiterName}
+                          </span>
+                        ) : null;
+                      })()}
                       <span className="text-[10px] font-mono text-slate-500">#{order.id.slice(-5).toUpperCase()}</span>
                     </div>
 

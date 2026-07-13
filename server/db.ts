@@ -245,6 +245,18 @@ class LocalDatabase {
         // La columna ya existe, ignorar
       }
 
+      // Migración: agregar columnas de asignación de camarero a tables
+      try {
+        db.exec("ALTER TABLE tables ADD COLUMN assignedWaiterId TEXT");
+      } catch {
+        // La columna ya existe, ignorar
+      }
+      try {
+        db.exec("ALTER TABLE tables ADD COLUMN assignedWaiterName TEXT");
+      } catch {
+        // La columna ya existe, ignorar
+      }
+
       // Verificar si hay que insertar la semilla
       const userCount = db.prepare("SELECT count(*) as count FROM users").get() as { count: number };
       if (userCount && userCount.count === 0) {
