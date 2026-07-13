@@ -766,16 +766,12 @@ app.get("/api/orders", (req, res) => {
   const { tableId, status } = req.query as { tableId?: string; status?: string };
   
   if (tableId) {
-    const table = dbInstance.getTableById(tableId);
-    if (table) {
-      if (table.activeSessionId) {
-        orders = orders.filter(o => o.tableId === tableId && o.sessionId === table.activeSessionId);
-      } else {
-        orders = [];
-      }
-    } else {
-      orders = orders.filter(o => o.tableId === tableId);
-    }
+    // Solo devolver pedidos activos (no servidos ni cancelados) para esa mesa
+    orders = orders.filter(o =>
+      o.tableId === tableId &&
+      o.status !== "servido" &&
+      o.status !== "cancelado"
+    );
   }
   
   if (status) orders = orders.filter(o => o.status === status);
