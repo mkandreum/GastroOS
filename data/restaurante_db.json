@@ -1,0 +1,1448 @@
+{
+  "users": [
+    {
+      "id": "usr-admin",
+      "username": "admin",
+      "role": "admin",
+      "name": "Administrador General",
+      "passwordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
+    },
+    {
+      "id": "usr-c1",
+      "username": "camarero1",
+      "role": "camarero",
+      "name": "Carlos Camarero",
+      "passwordHash": "24d374b02bfc34c1157acff1ba3898029cb2c56681d4ad4c542ab0b4e16d428a"
+    },
+    {
+      "id": "usr-k1",
+      "username": "cocina1",
+      "role": "cocina",
+      "name": "Chef Martínez",
+      "passwordHash": "17fb2b2ef0554390dfdcb2eb9099e1279e12bd4b4b01fb33a1d5f4c0ce15e85c"
+    },
+    {
+      "id": "usr-b1",
+      "username": "bar1",
+      "role": "bar",
+      "name": "Lucía Barista",
+      "passwordHash": "e424b3bbdbfa936f711e499c91d0958177cd7e94984bcf26b639c2811185b36b"
+    }
+  ],
+  "tables": [
+    {
+      "id": "table-1",
+      "number": 1,
+      "name": "Mesa 1",
+      "status": "ocupada",
+      "activeSessionId": "sess-1780923818311-900",
+      "qrCodeData": "/mesa/1",
+      "currentBillTotal": 22.1,
+      "posX": 100,
+      "posY": 100
+    },
+    {
+      "id": "table-2",
+      "number": 2,
+      "name": "Mesa 2",
+      "status": "libre",
+      "activeSessionId": null,
+      "qrCodeData": "/mesa/2",
+      "currentBillTotal": 0,
+      "posX": 103,
+      "posY": 0
+    },
+    {
+      "id": "table-3",
+      "number": 3,
+      "name": "Mesa 3",
+      "status": "libre",
+      "activeSessionId": null,
+      "qrCodeData": "/mesa/3",
+      "currentBillTotal": 0,
+      "posX": 398,
+      "posY": 107
+    },
+    {
+      "id": "table-4",
+      "number": 4,
+      "name": "Mesa 4",
+      "status": "pendiente_pago",
+      "activeSessionId": "sess-1780919679836-87",
+      "qrCodeData": "/mesa/4",
+      "currentBillTotal": 15.3,
+      "posX": 547,
+      "posY": 104
+    },
+    {
+      "id": "table-5",
+      "number": 5,
+      "name": "Mesa 5",
+      "status": "libre",
+      "activeSessionId": null,
+      "qrCodeData": "/mesa/5",
+      "currentBillTotal": 0,
+      "posX": 103,
+      "posY": 203
+    },
+    {
+      "id": "table-6",
+      "number": 6,
+      "name": "Mesa 6",
+      "status": "libre",
+      "activeSessionId": null,
+      "qrCodeData": "/mesa/6",
+      "currentBillTotal": 0,
+      "posX": 103,
+      "posY": 307
+    },
+    {
+      "id": "table-7",
+      "number": 7,
+      "name": "Mesa 7",
+      "status": "ocupada",
+      "activeSessionId": "sess-1780924579018-672",
+      "qrCodeData": "/mesa/7",
+      "currentBillTotal": 15.3,
+      "posX": 403,
+      "posY": 215
+    },
+    {
+      "id": "table-8",
+      "number": 8,
+      "name": "Mesa 8",
+      "status": "libre",
+      "activeSessionId": null,
+      "qrCodeData": "/mesa/8",
+      "currentBillTotal": 0,
+      "posX": 553,
+      "posY": 213
+    },
+    {
+      "id": "table-9",
+      "number": 9,
+      "name": "Barra",
+      "status": "libre",
+      "activeSessionId": null,
+      "qrCodeData": "https://ais-dev-363vwfhshslnxuhyrcbfjv-70570309603.europe-west1.run.app/mesa/9",
+      "currentBillTotal": 0,
+      "posX": 247,
+      "posY": 0
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Tapas y Raciones",
+      "description": "Platos para compartir, lo mejor de nuestra barra",
+      "icon": "Utensils"
+    },
+    {
+      "id": "cat-2",
+      "name": "Carnes y Pescados",
+      "description": "Platos principales preparados a la brasa",
+      "icon": "Beef"
+    },
+    {
+      "id": "cat-3",
+      "name": "Bebidas y Bodega",
+      "description": "Cervezas, refrescos y nuestra selección de vinos",
+      "icon": "GlassWater"
+    },
+    {
+      "id": "cat-4",
+      "name": "Postres Caseros",
+      "description": "El toque dulce final elaborado por nosotros",
+      "icon": "IceCream"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-1",
+      "categoryId": "cat-1",
+      "name": "Patatas Bravas Crujientes",
+      "description": "Patatas gallegas cortadas a mano, doble cocción, con salsa brava ahumada picante y alioli suave.",
+      "price": 6.8,
+      "image": "patatas_bravas.jpg",
+      "allergens": [
+        "gluten",
+        "huevo"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": null
+    },
+    {
+      "id": "prod-2",
+      "categoryId": "cat-1",
+      "name": "Croquetas de Jamón Ibérico (6 ud)",
+      "description": "Súper cremosas hechas con leche de caserío y jamón de bellota picado extra fino.",
+      "price": 8.5,
+      "image": "croquetas_iberico.jpg",
+      "allergens": [
+        "gluten",
+        "lacteos",
+        "huevo"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": 38
+    },
+    {
+      "id": "prod-3",
+      "categoryId": "cat-1",
+      "name": "Calamares a la Andaluza con Alioli de Lima",
+      "description": "Calamar fresco de potera en tempura de garbanzo crujiente.",
+      "price": 12.5,
+      "image": "calamares.jpg",
+      "allergens": [
+        "gluten",
+        "moluscos",
+        "huevo"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": 11
+    },
+    {
+      "id": "prod-4",
+      "categoryId": "cat-1",
+      "name": "Salmorejo Cordobés Tradicional",
+      "description": "Sopa emulsionada fría con tomate pera confitado, jamón ibérico crujiente y huevo duro.",
+      "price": 6,
+      "image": "salmorejo.jpg",
+      "allergens": [
+        "gluten",
+        "huevo"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": null
+    },
+    {
+      "id": "prod-5",
+      "categoryId": "cat-2",
+      "name": "Chuletón de Vaca Vieja (500g)",
+      "description": "Maduración de 45 días a la parrilla, servido con pimientos del piquillo caramelizados.",
+      "price": 24.5,
+      "image": "chuleton.jpg",
+      "allergens": [],
+      "iva": 10,
+      "available": true,
+      "stock": 14,
+      "modifierGroups": [
+        {
+          "id": "modg-1",
+          "name": "Punto de la carne",
+          "required": true,
+          "maxSelections": 1,
+          "options": [
+            {
+              "id": "modo-1",
+              "name": "Poco hecho (Sangrante)",
+              "price": 0
+            },
+            {
+              "id": "modo-2",
+              "name": "Al punto (Rosado)",
+              "price": 0
+            },
+            {
+              "id": "modo-3",
+              "name": "Hecho",
+              "price": 0
+            },
+            {
+              "id": "modo-4",
+              "name": "Muy hecho",
+              "price": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prod-6",
+      "categoryId": "cat-2",
+      "name": "Hamburguesa Premium 'El Corral'",
+      "description": "Carne de buey (200g), queso cheddar fundido, cebolla confitada dulce y bacon crujiente sobre brioche.",
+      "price": 14.2,
+      "image": "hamburguesa.jpg",
+      "allergens": [
+        "gluten",
+        "lacteos",
+        "huevo",
+        "sulfitos"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": 25,
+      "modifierGroups": [
+        {
+          "id": "modg-2",
+          "name": "Ingredientes adicionales",
+          "required": false,
+          "maxSelections": 3,
+          "options": [
+            {
+              "id": "modo-5",
+              "name": "Huevo frito extra",
+              "price": 1.5
+            },
+            {
+              "id": "modo-6",
+              "name": "Doble de queso cheddar",
+              "price": 1
+            },
+            {
+              "id": "modo-7",
+              "name": "Salsa de trufa negra",
+              "price": 1.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prod-7",
+      "categoryId": "cat-2",
+      "name": "Bacalao Confitado a la Llauna",
+      "description": "Lomo de bacalao fresco confitado sobre lecho de patatas panaderas con sofrito rustico de ajo y pimentón.",
+      "price": 18,
+      "image": "bacalao.jpg",
+      "allergens": [
+        "pescado"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": 8
+    },
+    {
+      "id": "prod-8",
+      "categoryId": "cat-3",
+      "name": "Caña de Cerveza de Barril",
+      "description": "Copa helada de nuestra cerveza premium.",
+      "price": 2.5,
+      "image": "cerveza.jpg",
+      "allergens": [
+        "gluten"
+      ],
+      "iva": 21,
+      "available": true,
+      "stock": null
+    },
+    {
+      "id": "prod-9",
+      "categoryId": "cat-3",
+      "name": "Copa de Tinto Ribera de Duero",
+      "description": "Vino tinto Crianza con notas intensas de frutos rojos maduros.",
+      "price": 3.5,
+      "image": "vino_tinto.jpg",
+      "allergens": [
+        "sulfitos"
+      ],
+      "iva": 21,
+      "available": true,
+      "stock": null
+    },
+    {
+      "id": "prod-10",
+      "categoryId": "cat-3",
+      "name": "Refresco de Cola (Lata 330ml)",
+      "description": "Coca-Cola Original o Zero fría con limón.",
+      "price": 2.8,
+      "image": "refresco.jpg",
+      "allergens": [],
+      "iva": 21,
+      "available": true,
+      "stock": null
+    },
+    {
+      "id": "prod-11",
+      "categoryId": "cat-3",
+      "name": "Agua de Manantial con/sin Gas (500ml)",
+      "description": "Agua mineral filtrada de alta pureza.",
+      "price": 2,
+      "image": "agua.jpg",
+      "allergens": [],
+      "iva": 10,
+      "available": true,
+      "stock": null
+    },
+    {
+      "id": "prod-12",
+      "categoryId": "cat-4",
+      "name": "Tarta de Queso Fundente San Sebastián",
+      "description": "Nuestra famosa tarta horneada con el corazón cremoso y base crujiente.",
+      "price": 6.5,
+      "image": "tarta_queso.jpg",
+      "allergens": [
+        "gluten",
+        "lacteos",
+        "huevo"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": 15
+    },
+    {
+      "id": "prod-13",
+      "categoryId": "cat-4",
+      "name": "Flan Casero de Huevo y Leche Entera",
+      "description": "Cocinado a baño maría con caramelo tostado artesanal y crema chantilly.",
+      "price": 4.5,
+      "image": "flan.jpg",
+      "allergens": [
+        "lacteos",
+        "huevo"
+      ],
+      "iva": 10,
+      "available": true,
+      "stock": 20
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-1780916919694-858",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780916919694-649",
+      "timestamp": "2026-06-08T11:08:39.694Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780916919694-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 13.6
+    },
+    {
+      "id": "ord-1780916929747-720",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780916919694-649",
+      "timestamp": "2026-06-08T11:08:49.747Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780916929720-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780916929747-1",
+          "productId": "prod-2",
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 2,
+          "priceUnit": 8.5,
+          "priceTotal": 17,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 30.6
+    },
+    {
+      "id": "ord-1780916962487-819",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780916919694-649",
+      "timestamp": "2026-06-08T11:09:22.487Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780916962487-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 13.6
+    },
+    {
+      "id": "ord-1780916974763-62",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780916919694-649",
+      "timestamp": "2026-06-08T11:09:34.763Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780916974763-0",
+          "productId": "prod-8",
+          "name": "Caña de Cerveza de Barril",
+          "quantity": 1,
+          "priceUnit": 2.5,
+          "priceTotal": 2.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "bar"
+        }
+      ],
+      "totalAmount": 2.5
+    },
+    {
+      "id": "ord-1780917267470-473",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780917267456-318",
+      "timestamp": "2026-06-08T11:14:27.470Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780917267456-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780917267470-1",
+          "productId": "prod-2",
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 1,
+          "priceUnit": 8.5,
+          "priceTotal": 8.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 22.1
+    },
+    {
+      "id": "ord-1780917557797-457",
+      "tableId": "table-8",
+      "tableName": "Mesa 8",
+      "sessionId": "sess-1780917557779-589",
+      "timestamp": "2026-06-08T11:19:17.797Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780917557779-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780917557788-1",
+          "productId": "prod-2",
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 1,
+          "priceUnit": 8.5,
+          "priceTotal": 8.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780917557788-2",
+          "productId": "prod-4",
+          "name": "Salmorejo Cordobés Tradicional",
+          "quantity": 1,
+          "priceUnit": 6,
+          "priceTotal": 6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780917557797-3",
+          "productId": "prod-5",
+          "name": "Chuletón de Vaca Vieja (500g)",
+          "quantity": 1,
+          "priceUnit": 24.5,
+          "priceTotal": 24.5,
+          "notes": "",
+          "selectedExtras": [
+            {
+              "groupName": "Punto de la carne",
+              "optionName": "Al punto (Rosado)",
+              "price": 0
+            }
+          ],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780917557797-4",
+          "productId": "prod-8",
+          "name": "Caña de Cerveza de Barril",
+          "quantity": 1,
+          "priceUnit": 2.5,
+          "priceTotal": 2.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "bar"
+        },
+        {
+          "id": "line-1780917557797-5",
+          "productId": "prod-9",
+          "name": "Copa de Tinto Ribera de Duero",
+          "quantity": 1,
+          "priceUnit": 3.5,
+          "priceTotal": 3.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "bar"
+        },
+        {
+          "id": "line-1780917557797-6",
+          "productId": "prod-10",
+          "name": "Refresco de Cola (Lata 330ml)",
+          "quantity": 1,
+          "priceUnit": 2.8,
+          "priceTotal": 2.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "bar"
+        },
+        {
+          "id": "line-1780917557797-7",
+          "productId": "prod-11",
+          "name": "Agua de Manantial con/sin Gas (500ml)",
+          "quantity": 1,
+          "priceUnit": 2,
+          "priceTotal": 2,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "bar"
+        }
+      ],
+      "totalAmount": 56.6
+    },
+    {
+      "id": "ord-1780918167722-48",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780918167722-985",
+      "timestamp": "2026-06-08T11:29:27.722Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780918167722-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 13.6
+    },
+    {
+      "id": "ord-1780918361201-50",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780918167722-985",
+      "timestamp": "2026-06-08T11:32:41.201Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780918361201-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 13.6
+    },
+    {
+      "id": "ord-1780918644400-481",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780918644393-809",
+      "timestamp": "2026-06-08T11:37:24.400Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780918644400-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 13.6
+    },
+    {
+      "id": "ord-1780919524453-130",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780919524453-716",
+      "timestamp": "2026-06-08T11:52:04.453Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780919524453-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 13.6
+    },
+    {
+      "id": "ord-1780919535453-429",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780919524453-716",
+      "timestamp": "2026-06-08T11:52:15.453Z",
+      "status": "servido",
+      "items": [
+        {
+          "id": "line-1780919535453-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 6.8
+    },
+    {
+      "id": "ord-1780919679867-462",
+      "tableId": "table-4",
+      "tableName": "Mesa 4",
+      "sessionId": "sess-1780919679836-87",
+      "timestamp": "2026-06-08T11:54:39.867Z",
+      "status": "listo",
+      "items": [
+        {
+          "id": "line-1780919679836-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780919679850-1",
+          "productId": "prod-3",
+          "name": "Calamares a la Andaluza con Alioli de Lima",
+          "quantity": 1,
+          "priceUnit": 12.5,
+          "priceTotal": 12.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780919679867-2",
+          "productId": "prod-2",
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 1,
+          "priceUnit": 8.5,
+          "priceTotal": 8.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 27.8
+    },
+    {
+      "id": "ord-1780923818311-439",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780923818311-900",
+      "timestamp": "2026-06-08T13:03:38.311Z",
+      "status": "pendiente",
+      "items": [
+        {
+          "id": "line-1780923818311-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 6.8
+    },
+    {
+      "id": "ord-1780923825601-234",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780923818311-900",
+      "timestamp": "2026-06-08T13:03:45.601Z",
+      "status": "pendiente",
+      "items": [
+        {
+          "id": "line-1780923825601-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 6.8
+    },
+    {
+      "id": "ord-1780924579020-369",
+      "tableId": "table-7",
+      "tableName": "Mesa 7",
+      "sessionId": "sess-1780924579018-672",
+      "timestamp": "2026-06-08T13:16:19.020Z",
+      "status": "pendiente",
+      "items": [
+        {
+          "id": "line-1780924579019-0",
+          "productId": "prod-1",
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        },
+        {
+          "id": "line-1780924579020-1",
+          "productId": "prod-2",
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 1,
+          "priceUnit": 8.5,
+          "priceTotal": 8.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 15.3
+    },
+    {
+      "id": "ord-1780924671637-572",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780923818311-900",
+      "timestamp": "2026-06-08T13:17:51.637Z",
+      "status": "pendiente",
+      "items": [
+        {
+          "id": "line-1780924671637-0",
+          "productId": "prod-2",
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 1,
+          "priceUnit": 8.5,
+          "priceTotal": 8.5,
+          "notes": "",
+          "selectedExtras": [],
+          "destination": "cocina"
+        }
+      ],
+      "totalAmount": 8.5
+    }
+  ],
+  "printerConfig": {
+    "ip": "193.127.45.74",
+    "port": 9100,
+    "name": "Impresora Cocina Seiko",
+    "enabled": true
+  },
+  "ticketPrinterConfig": {
+    "ip": "193.127.45.74",
+    "port": 9100,
+    "name": "Impresora Tickets Epson",
+    "enabled": true
+  },
+  "printLogs": [
+    {
+      "orderId": "ord-1780916919694-858",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FDID Pedido: 94-858^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:08:39^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Patatas Bravas Cruji^FS\n^FO40,260^GB320,2,2^FS\n^FO40,275^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "failed",
+      "errorMessage": "Error tras 3 intentos: Tiempo de espera excedido (4000ms) conectando a 192.168.1.100:9100 (Simulación fallida pero ZPL registrado para visualización web)",
+      "id": "print-1780916919802-885",
+      "timestamp": "2026-06-08T11:08:39.802Z",
+      "retries": 3
+    },
+    {
+      "orderId": "ord-1780916929747-720",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FDID Pedido: 47-720^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:08:49^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Patatas Bravas Cruji^FS\n^FO40,260^A0N,24,24^FD2x Croquetas de Jamón I^FS\n^FO40,300^GB320,2,2^FS\n^FO40,315^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "failed",
+      "errorMessage": "Error tras 3 intentos: Tiempo de espera excedido (4000ms) conectando a 192.168.1.100:9100 (Simulación fallida pero ZPL registrado para visualización web)",
+      "id": "print-1780916929802-331",
+      "timestamp": "2026-06-08T11:08:49.802Z",
+      "retries": 3
+    },
+    {
+      "orderId": "ord-test",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa VIP^FS\n^FO40,150^A0N,18,18^FDID Pedido: D-TEST^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:09:12^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Test Impresión Direc^FS\n^FO60,245^A0N,18,18^FDNota: \"Prueba ZPL por red\"^FS\n^FO40,282^GB320,2,2^FS\n^FO40,297^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780916952306-374",
+      "timestamp": "2026-06-08T11:09:12.306Z",
+      "retries": 0
+    },
+    {
+      "orderId": "ord-1780916962487-819",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FDID Pedido: 87-819^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:09:22^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Patatas Bravas Cruji^FS\n^FO40,260^GB320,2,2^FS\n^FO40,275^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780916962505-375",
+      "timestamp": "2026-06-08T11:09:22.505Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780916980982",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL800\n^FO40,40^A0N,36,36^FD*** TICKET DE CUENTA ***^FS\n^FO40,85^A0N,28,28^FDRESTAURANTE^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FD8/6/2026, 13:09:40^FS\n^FO40,180^GB320,3,3^FS\n^FO40,205^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,205^A0N,20,20^FD13.60 EUR^FS\n^FO40,230^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,230^A0N,20,20^FD13.60 EUR^FS\n^FO40,255^A0N,20,20^FD2x Croquetas de Jamón^FS\n^FO310,255^A0N,20,20^FD17.00 EUR^FS\n^FO40,280^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,280^A0N,20,20^FD13.60 EUR^FS\n^FO40,305^A0N,20,20^FD1x Caña de Cerveza de^FS\n^FO310,305^A0N,20,20^FD2.50 EUR^FS\n^FO40,340^GB320,2,2^FS\n^FO40,355^A0N,22,22^FDSubtotal:^FS\n^FO310,355^A0N,22,22^FD60.30 EUR^FS\n^FO40,380^A0N,18,18^FDIVA incl.:^FS\n^FO310,380^A0N,18,18^FD6.31 EUR^FS\n^FO40,408^A0N,28,28^FD*** TOTAL ***^FS\n^FO310,408^A0N,28,28^FD60.30 EUR^FS\n^FO40,443^A0N,16,16^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780916980982-997",
+      "timestamp": "2026-06-08T11:09:40.982Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780917267470-473",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FDID Pedido: 70-473^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:14:27^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Patatas Bravas Cruji^FS\n^FO40,260^A0N,24,24^FD1x Croquetas de Jamón I^FS\n^FO40,300^GB320,2,2^FS\n^FO40,315^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780917267682-793",
+      "timestamp": "2026-06-08T11:14:27.682Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780917324476",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL800\n^FO40,40^A0N,36,36^FD*** TICKET DE CUENTA ***^FS\n^FO40,85^A0N,28,28^FDRESTAURANTE^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FD8/6/2026, 13:15:24^FS\n^FO40,180^GB320,3,3^FS\n^FO40,205^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,205^A0N,20,20^FD13.60 EUR^FS\n^FO40,230^A0N,20,20^FD1x Croquetas de Jamón^FS\n^FO310,230^A0N,20,20^FD8.50 EUR^FS\n^FO40,265^GB320,2,2^FS\n^FO40,280^A0N,22,22^FDSubtotal:^FS\n^FO310,280^A0N,22,22^FD22.10 EUR^FS\n^FO40,305^A0N,18,18^FDIVA incl.:^FS\n^FO310,305^A0N,18,18^FD2.21 EUR^FS\n^FO40,333^A0N,28,28^FD*** TOTAL ***^FS\n^FO310,333^A0N,28,28^FD22.10 EUR^FS\n^FO40,368^A0N,16,16^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780917324476-886",
+      "timestamp": "2026-06-08T11:15:24.476Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780917557797-457",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 8^FS\n^FO40,150^A0N,18,18^FDID Pedido: 97-457^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:19:17^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD1x Patatas Bravas Cruji^FS\n^FO40,260^A0N,24,24^FD1x Croquetas de Jamón I^FS\n^FO40,300^A0N,24,24^FD1x Salmorejo Cordobés T^FS\n^FO40,340^A0N,24,24^FD1x Chuletón de Vaca Vie^FS\n^FO60,365^A0N,18,18^FD+ Al punto (Rosado)^FS\n^FO40,400^GB320,2,2^FS\n^FO40,415^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780917557815-488",
+      "timestamp": "2026-06-08T11:19:17.815Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780918057592",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL800\n^FO40,40^A0N,36,36^FD*** TICKET DE CUENTA ***^FS\n^FO40,85^A0N,28,28^FDRESTAURANTE^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 8^FS\n^FO40,150^A0N,18,18^FD8/6/2026, 13:27:37^FS\n^FO40,180^GB320,3,3^FS\n^FO40,205^A0N,20,20^FD1x Chuletón de Vaca V^FS\n^FO310,205^A0N,20,20^FD24.50 EUR^FS\n^FO40,230^A0N,20,20^FD1x Salmorejo Cordobés^FS\n^FO310,230^A0N,20,20^FD6.00 EUR^FS\n^FO40,265^GB320,2,2^FS\n^FO40,280^A0N,22,22^FDSubtotal:^FS\n^FO310,280^A0N,22,22^FD30.50 EUR^FS\n^FO40,305^A0N,18,18^FDIVA incl.:^FS\n^FO310,305^A0N,18,18^FD3.05 EUR^FS\n^FO40,333^A0N,28,28^FD*** TOTAL ***^FS\n^FO310,333^A0N,28,28^FD30.50 EUR^FS\n^FO40,368^A0N,16,16^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918057592-915",
+      "timestamp": "2026-06-08T11:27:37.592Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780918167722-48",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FDID Pedido: 722-48^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:29:27^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Patatas Bravas Cruji^FS\n^FO40,260^GB320,2,2^FS\n^FO40,275^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918167747-704",
+      "timestamp": "2026-06-08T11:29:27.747Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780918361201-50",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL600\n^FO40,40^A0N,36,36^FD*** RESTAURANTE ***^FS\n^FO40,85^A0N,28,28^FDPEDIDO DE COCINA^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FDID Pedido: 201-50^FS\n^FO40,175^A0N,18,18^FDHora: 8/6/2026, 13:32:41^FS\n^FO40,200^GB320,3,3^FS\n^FO40,220^A0N,24,24^FD2x Patatas Bravas Cruji^FS\n^FO40,260^GB320,2,2^FS\n^FO40,275^A0N,18,18^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918361273-656",
+      "timestamp": "2026-06-08T11:32:41.273Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780918367130",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL800\n^FO40,40^A0N,36,36^FD*** TICKET DE CUENTA ***^FS\n^FO40,85^A0N,28,28^FDRESTAURANTE^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FD8/6/2026, 13:32:47^FS\n^FO40,180^GB320,3,3^FS\n^FO40,205^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,205^A0N,20,20^FD13.60 EUR^FS\n^FO40,230^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,230^A0N,20,20^FD13.60 EUR^FS\n^FO40,265^GB320,2,2^FS\n^FO40,280^A0N,22,22^FDSubtotal:^FS\n^FO310,280^A0N,22,22^FD27.20 EUR^FS\n^FO40,305^A0N,18,18^FDIVA incl.:^FS\n^FO310,305^A0N,18,18^FD2.72 EUR^FS\n^FO40,333^A0N,28,28^FD*** TOTAL ***^FS\n^FO310,333^A0N,28,28^FD27.20 EUR^FS\n^FO40,368^A0N,16,16^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918367130-395",
+      "timestamp": "2026-06-08T11:32:47.130Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780918380407",
+      "zpl": "^XA\n^CI28\n^PW400\n^LL800\n^FO40,40^A0N,36,36^FD*** TICKET DE CUENTA ***^FS\n^FO40,85^A0N,28,28^FDRESTAURANTE^FS\n^FO40,125^A0N,22,22^FDMesa: Mesa 1^FS\n^FO40,150^A0N,18,18^FD8/6/2026, 13:33:00^FS\n^FO40,180^GB320,3,3^FS\n^FO40,205^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,205^A0N,20,20^FD13.60 EUR^FS\n^FO40,230^A0N,20,20^FD2x Patatas Bravas Cru^FS\n^FO310,230^A0N,20,20^FD13.60 EUR^FS\n^FO40,265^GB320,2,2^FS\n^FO40,280^A0N,22,22^FDSubtotal:^FS\n^FO310,280^A0N,22,22^FD27.20 EUR^FS\n^FO40,305^A0N,18,18^FDIVA incl.:^FS\n^FO310,305^A0N,18,18^FD2.72 EUR^FS\n^FO40,333^A0N,28,28^FD*** TOTAL ***^FS\n^FO310,333^A0N,28,28^FD27.20 EUR^FS\n^FO40,368^A0N,16,16^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918380407-17",
+      "timestamp": "2026-06-08T11:33:00.407Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780918644400-481",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,185^A0N,24,24^FDPedido: 00-481^FS\n^FO40,215^A0N,24,24^FD8/6/2026, 13:37:24^FS\n^FO40,250^GB640,3,3^FS\n^FO40,270^A0N,32,32^FD2x Patatas Bravas Crujientes^FS\n^FO40,325^GB640,2,2^FS\n^FO40,345^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918644970-710",
+      "timestamp": "2026-06-08T11:37:24.970Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780918670338",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,180^A0N,22,22^FD8/6/2026, 13:37:50^FS\n^FO40,220^GB640,3,3^FS\n^FO40,245^A0N,26,26^FD1x Patatas Bravas Crujiente^FS\n^FO580,245^A0N,26,26^FD6.80 EUR^FS\n^FO40,292^GB640,2,2^FS\n^FO40,312^A0N,28,28^FDSubtotal:^FS\n^FO580,312^A0N,28,28^FD6.80 EUR^FS\n^FO40,344^A0N,24,24^FDIVA incl.:^FS\n^FO580,344^A0N,24,24^FD0.68 EUR^FS\n^FO40,379^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,379^A0N,36,36^FD6.80 EUR^FS\n^FO40,419^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780918670338-24",
+      "timestamp": "2026-06-08T11:37:50.338Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780919524453-130",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,185^A0N,24,24^FDPedido: 53-130^FS\n^FO40,215^A0N,24,24^FD8/6/2026, 13:52:04^FS\n^FO40,250^GB640,3,3^FS\n^FO40,270^A0N,32,32^FD2x Patatas Bravas Crujientes^FS\n^FO40,325^GB640,2,2^FS\n^FO40,345^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780919524547-996",
+      "timestamp": "2026-06-08T11:52:04.547Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780919535453-429",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,185^A0N,24,24^FDPedido: 53-429^FS\n^FO40,215^A0N,24,24^FD8/6/2026, 13:52:15^FS\n^FO40,250^GB640,3,3^FS\n^FO40,270^A0N,32,32^FD1x Patatas Bravas Crujientes^FS\n^FO40,325^GB640,2,2^FS\n^FO40,345^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780919535480-630",
+      "timestamp": "2026-06-08T11:52:15.480Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780919561949",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,180^A0N,22,22^FD8/6/2026, 13:52:41^FS\n^FO40,220^GB640,3,3^FS\n^FO40,245^A0N,26,26^FD2x Patatas Bravas Crujiente^FS\n^FO580,245^A0N,26,26^FD6.80 EUR^FS\n^FO40,277^A0N,26,26^FD1x Tarta de Queso Fundente ^FS\n^FO580,277^A0N,26,26^FD6.50 EUR^FS\n^FO40,324^GB640,2,2^FS\n^FO40,344^A0N,28,28^FDSubtotal:^FS\n^FO580,344^A0N,28,28^FD20.10 EUR^FS\n^FO40,376^A0N,24,24^FDIVA incl.:^FS\n^FO580,376^A0N,24,24^FD2.01 EUR^FS\n^FO40,411^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,411^A0N,36,36^FD20.10 EUR^FS\n^FO40,451^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780919561949-820",
+      "timestamp": "2026-06-08T11:52:41.949Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780919577539",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,180^A0N,22,22^FD8/6/2026, 13:52:57^FS\n^FO40,220^GB640,3,3^FS\n^FO40,245^A0N,26,26^FD2x Patatas Bravas Crujiente^FS\n^FO580,245^A0N,26,26^FD13.60 EUR^FS\n^FO40,277^A0N,26,26^FD1x Patatas Bravas Crujiente^FS\n^FO580,277^A0N,26,26^FD6.80 EUR^FS\n^FO40,324^GB640,2,2^FS\n^FO40,344^A0N,28,28^FDSubtotal:^FS\n^FO580,344^A0N,28,28^FD20.40 EUR^FS\n^FO40,376^A0N,24,24^FDIVA incl.:^FS\n^FO580,376^A0N,24,24^FD2.04 EUR^FS\n^FO40,411^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,411^A0N,36,36^FD20.40 EUR^FS\n^FO40,451^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780919577539-834",
+      "timestamp": "2026-06-08T11:52:57.539Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780919679867-462",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,24,24^FDFactura: F-01001^FS\n^FO540,150^A0N,24,24^FDID: 67-462^FS\n^FO40,185^A0N,28,28^FDMesa: Mesa 4^FS\n^FO40,220^A0N,24,24^FD8/6/2026, 13:54:39^FS\n^FO40,255^GB640,3,3^FS\n^FO40,275^A0N,32,32^FD1x Patatas Bravas Crujientes^FS\n^FO40,330^A0N,32,32^FD1x Calamares a la Andaluza con ^FS\n^FO40,385^A0N,32,32^FD1x Croquetas de Jamón Ibérico (^FS\n^FO40,440^GB640,2,2^FS\n^FO40,460^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780919679947-201",
+      "timestamp": "2026-06-08T11:54:39.947Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780919702861",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,24,24^FDFactura: F-01002^FS\n^FO40,180^A0N,28,28^FDMesa: Mesa 4^FS\n^FO40,215^A0N,22,22^FD8/6/2026, 13:55:02^FS\n^FO40,250^GB640,3,3^FS\n^FO40,275^A0N,26,26^FD2x Croquetas de Jamón Ibéri^FS\n^FO580,275^A0N,26,26^FD17.00 EUR^FS\n^FO40,307^A0N,26,26^FD2x Hamburguesa Premium 'El ^FS\n^FO580,307^A0N,26,26^FD28.40 EUR^FS\n^FO40,339^A0N,26,26^FD2x Caña de Cerveza^FS\n^FO580,339^A0N,26,26^FD5.00 EUR^FS\n^FO40,371^A0N,26,26^FD1x Refresco de Cola^FS\n^FO580,371^A0N,26,26^FD2.80 EUR^FS\n^FO40,403^A0N,26,26^FD1x Salmorejo Cordobés Tradi^FS\n^FO580,403^A0N,26,26^FD6.00 EUR^FS\n^FO40,450^GB640,2,2^FS\n^FO40,470^A0N,28,28^FDSubtotal:^FS\n^FO580,470^A0N,28,28^FD6.00 EUR^FS\n^FO40,502^A0N,24,24^FDIVA incl.:^FS\n^FO580,502^A0N,24,24^FD0.60 EUR^FS\n^FO40,537^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,537^A0N,36,36^FD6.00 EUR^FS\n^FO40,577^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780919702861-607",
+      "timestamp": "2026-06-08T11:55:02.861Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780923818311-439",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,24,24^FDFactura: F-01001^FS\n^FO540,150^A0N,24,24^FDID: 11-439^FS\n^FO40,185^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,220^A0N,24,24^FD8/6/2026, 15:03:38^FS\n^FO40,255^GB640,3,3^FS\n^FO40,275^A0N,32,32^FD1x Patatas Bravas Crujientes^FS\n^FO40,330^GB640,2,2^FS\n^FO40,350^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780923818447-527",
+      "timestamp": "2026-06-08T13:03:38.447Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780923825601-234",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,24,24^FDFactura: F-01002^FS\n^FO540,150^A0N,24,24^FDID: 01-234^FS\n^FO40,185^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,220^A0N,24,24^FD8/6/2026, 15:03:45^FS\n^FO40,255^GB640,3,3^FS\n^FO40,275^A0N,32,32^FD1x Patatas Bravas Crujientes^FS\n^FO40,330^GB640,2,2^FS\n^FO40,350^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780923825601-756",
+      "timestamp": "2026-06-08T13:03:45.601Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780924579020-369",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,24,24^FDFactura: F-01001^FS\n^FO540,150^A0N,24,24^FDID: 20-369^FS\n^FO40,185^A0N,28,28^FDMesa: Mesa 7^FS\n^FO40,220^A0N,24,24^FD8/6/2026, 15:16:19^FS\n^FO40,255^GB640,3,3^FS\n^FO40,275^A0N,32,32^FD1x Patatas Bravas Crujientes^FS\n^FO40,330^A0N,32,32^FD1x Croquetas de Jamón Ibérico (^FS\n^FO40,385^GB640,2,2^FS\n^FO40,405^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780924579029-173",
+      "timestamp": "2026-06-08T13:16:19.029Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ord-1780924671637-572",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** RESTAURANTE ***^FS\n^FO40,100^A0N,36,36^FDCOMANDA DE COCINA^FS\n^FO40,150^A0N,24,24^FDFactura: F-01003^FS\n^FO540,150^A0N,24,24^FDID: 37-572^FS\n^FO40,185^A0N,28,28^FDMesa: Mesa 1^FS\n^FO40,220^A0N,24,24^FD8/6/2026, 15:17:51^FS\n^FO40,255^GB640,3,3^FS\n^FO40,275^A0N,32,32^FD1x Croquetas de Jamón Ibérico (^FS\n^FO40,330^GB640,2,2^FS\n^FO40,350^A0N,24,24^FDServicio de Comanda Unificado^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780924671638-246",
+      "timestamp": "2026-06-08T13:17:51.638Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780925254285",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,24,24^FDFactura: F-01005^FS\n^FO40,180^A0N,28,28^FDMesa: Mesa 4^FS\n^FO40,215^A0N,22,22^FD8/6/2026, 15:27:34^FS\n^FO40,250^GB640,3,3^FS\n^FO40,275^A0N,26,26^FD1x Calamares a la Andaluza ^FS\n^FO580,275^A0N,26,26^FD12.50 EUR^FS\n^FO40,322^GB640,2,2^FS\n^FO40,342^A0N,28,28^FDSubtotal:^FS\n^FO580,342^A0N,28,28^FD12.50 EUR^FS\n^FO40,374^A0N,24,24^FDIVA incl.:^FS\n^FO580,374^A0N,24,24^FD1.25 EUR^FS\n^FO40,409^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,409^A0N,36,36^FD12.50 EUR^FS\n^FO40,449^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780925254285-465",
+      "timestamp": "2026-06-08T13:27:34.285Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780925254287",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,24,24^FDFactura: F-01006^FS\n^FO40,180^A0N,28,28^FDMesa: Mesa 4^FS\n^FO40,215^A0N,22,22^FD8/6/2026, 15:27:34^FS\n^FO40,250^GB640,3,3^FS\n^FO40,275^A0N,26,26^FD1x *** RESTO PENDIENTE ***^FS\n^FO580,275^A0N,26,26^FD0.00 EUR^FS\n^FO40,307^A0N,26,26^FD1x Patatas Bravas Crujiente^FS\n^FO580,307^A0N,26,26^FD6.80 EUR^FS\n^FO40,339^A0N,26,26^FD1x Calamares a la Andaluza ^FS\n^FO580,339^A0N,26,26^FD12.50 EUR^FS\n^FO40,371^A0N,26,26^FD1x Croquetas de Jamón Ibéri^FS\n^FO580,371^A0N,26,26^FD8.50 EUR^FS\n^FO40,418^GB640,2,2^FS\n^FO40,438^A0N,28,28^FDSubtotal:^FS\n^FO580,438^A0N,28,28^FD27.80 EUR^FS\n^FO40,470^A0N,24,24^FDIVA incl.:^FS\n^FO580,470^A0N,24,24^FD2.78 EUR^FS\n^FO40,505^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,505^A0N,36,36^FD15.30 EUR^FS\n^FO40,545^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780925254287-555",
+      "timestamp": "2026-06-08T13:27:34.287Z",
+      "retries": 1
+    },
+    {
+      "orderId": "ticket-1780925272204",
+      "zpl": "^XA\n^CI28\n^PW720\n^LL1040\n^FO40,40^A0N,48,48^FD*** TICKET DE CUENTA ***^FS\n^FO40,100^A0N,36,36^FDRESTAURANTE^FS\n^FO40,145^A0N,24,24^FDFactura: F-01007^FS\n^FO40,180^A0N,28,28^FDMesa: Mesa 4^FS\n^FO40,215^A0N,22,22^FD8/6/2026, 15:27:52^FS\n^FO40,250^GB640,3,3^FS\n^FO40,275^A0N,26,26^FD1x Patatas Bravas Crujiente^FS\n^FO580,275^A0N,26,26^FD6.80 EUR^FS\n^FO40,307^A0N,26,26^FD1x Calamares a la Andaluza ^FS\n^FO580,307^A0N,26,26^FD12.50 EUR^FS\n^FO40,339^A0N,26,26^FD1x Croquetas de Jamón Ibéri^FS\n^FO580,339^A0N,26,26^FD8.50 EUR^FS\n^FO40,386^GB640,2,2^FS\n^FO40,406^A0N,28,28^FDSubtotal:^FS\n^FO580,406^A0N,28,28^FD27.80 EUR^FS\n^FO40,438^A0N,24,24^FDIVA incl.:^FS\n^FO580,438^A0N,24,24^FD2.78 EUR^FS\n^FO40,473^A0N,36,36^FD*** TOTAL ***^FS\n^FO560,473^A0N,36,36^FD27.80 EUR^FS\n^FO40,513^A0N,22,22^FDGracias por su visita.^FS\n^XZ",
+      "status": "sent",
+      "errorMessage": null,
+      "id": "print-1780925272204-161",
+      "timestamp": "2026-06-08T13:27:52.204Z",
+      "retries": 1
+    }
+  ],
+  "closedReceiptsHistory": [
+    {
+      "id": "rec-old-1",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-old-1",
+      "subtotal": 35.8,
+      "taxAmount": 3.58,
+      "total": 35.8,
+      "timestamp": "2026-06-08T09:08:28.305Z",
+      "items": [
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Bacalao Confitado",
+          "quantity": 1,
+          "priceTotal": 18
+        },
+        {
+          "name": "Agua de Manantial",
+          "quantity": 2,
+          "priceTotal": 4
+        }
+      ]
+    },
+    {
+      "id": "rec-old-2",
+      "tableId": "table-4",
+      "tableName": "Mesa 4",
+      "sessionId": "sess-old-2",
+      "subtotal": 6,
+      "taxAmount": 0.6,
+      "total": 6,
+      "timestamp": "2026-06-08T06:08:28.307Z",
+      "items": [
+        {
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 2,
+          "priceTotal": 17
+        },
+        {
+          "name": "Hamburguesa Premium 'El Corral'",
+          "quantity": 2,
+          "priceTotal": 28.4
+        },
+        {
+          "name": "Caña de Cerveza",
+          "quantity": 2,
+          "priceTotal": 5
+        },
+        {
+          "name": "Refresco de Cola",
+          "quantity": 1,
+          "priceTotal": 2.8
+        },
+        {
+          "name": "Salmorejo Cordobés Tradicional",
+          "quantity": 1,
+          "priceUnit": 6,
+          "priceTotal": 6
+        }
+      ]
+    },
+    {
+      "id": "rec-old-3",
+      "tableId": "table-2",
+      "tableName": "Mesa 2",
+      "sessionId": "sess-old-3",
+      "subtotal": 78.9,
+      "taxAmount": 8.5,
+      "total": 78.9,
+      "timestamp": "2026-06-07T11:08:28.307Z",
+      "items": [
+        {
+          "name": "Chuletón de Vaca Vieja (500g)",
+          "quantity": 2,
+          "priceTotal": 49
+        },
+        {
+          "name": "Tarta de Queso Fundente",
+          "quantity": 2,
+          "priceTotal": 13
+        },
+        {
+          "name": "Copa de Tinto Ribera",
+          "quantity": 4,
+          "priceTotal": 14
+        },
+        {
+          "name": "Agua de Manantial",
+          "quantity": 1,
+          "priceTotal": 2.9
+        }
+      ]
+    },
+    {
+      "id": "rec-1780916980964-451",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780916919694-649",
+      "subtotal": 60.3,
+      "taxAmount": 6.31,
+      "total": 60.3,
+      "timestamp": "2026-06-08T11:09:40.964Z",
+      "items": [
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 2,
+          "priceUnit": 8.5,
+          "priceTotal": 17
+        },
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Caña de Cerveza de Barril",
+          "quantity": 1,
+          "priceUnit": 2.5,
+          "priceTotal": 2.5
+        }
+      ],
+      "splitMethod": "completa"
+    },
+    {
+      "id": "rec-1780917324451-420",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780917267456-318",
+      "subtotal": 22.1,
+      "taxAmount": 2.21,
+      "total": 22.1,
+      "timestamp": "2026-06-08T11:15:24.451Z",
+      "items": [
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Croquetas de Jamón Ibérico (6 ud)",
+          "quantity": 1,
+          "priceUnit": 8.5,
+          "priceTotal": 8.5
+        }
+      ],
+      "splitMethod": "completa"
+    },
+    {
+      "id": "rec-1780918057504-949",
+      "tableId": "table-8",
+      "tableName": "Mesa 8",
+      "sessionId": "sess-1780917557779-589",
+      "subtotal": 30.5,
+      "taxAmount": 3.05,
+      "total": 30.5,
+      "timestamp": "2026-06-08T11:27:37.504Z",
+      "items": [
+        {
+          "name": "Chuletón de Vaca Vieja (500g)",
+          "quantity": 1,
+          "priceUnit": 24.5,
+          "priceTotal": 24.5
+        },
+        {
+          "name": "Salmorejo Cordobés Tradicional",
+          "quantity": 1,
+          "priceUnit": 6,
+          "priceTotal": 6
+        }
+      ],
+      "splitMethod": "por_lineas"
+    },
+    {
+      "id": "rec-1780918380380-894",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780918167722-985",
+      "subtotal": 27.2,
+      "taxAmount": 2.72,
+      "total": 27.2,
+      "timestamp": "2026-06-08T11:33:00.380Z",
+      "items": [
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        }
+      ],
+      "splitMethod": "completa"
+    },
+    {
+      "id": "rec-1780918670316-178",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780918644393-809",
+      "subtotal": 20.1,
+      "taxAmount": 2.01,
+      "total": 20.1,
+      "timestamp": "2026-06-08T11:37:50.316Z",
+      "items": [
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8
+        },
+        {
+          "name": "Tarta de Queso Fundente San Sebastián",
+          "quantity": 1,
+          "priceUnit": 6.5,
+          "priceTotal": 6.5
+        }
+      ],
+      "splitMethod": "por_lineas"
+    },
+    {
+      "id": "rec-1780919577514-427",
+      "tableId": "table-1",
+      "tableName": "Mesa 1",
+      "sessionId": "sess-1780919524453-716",
+      "subtotal": 20.4,
+      "taxAmount": 2.04,
+      "total": 20.4,
+      "timestamp": "2026-06-08T11:52:57.515Z",
+      "items": [
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 2,
+          "priceUnit": 6.8,
+          "priceTotal": 13.6
+        },
+        {
+          "name": "Patatas Bravas Crujientes",
+          "quantity": 1,
+          "priceUnit": 6.8,
+          "priceTotal": 6.8
+        }
+      ],
+      "splitMethod": "completa"
+    },
+    {
+      "id": "rec-1780925254282-195",
+      "tableId": "table-4",
+      "tableName": "Mesa 4",
+      "sessionId": "sess-1780919679836-87",
+      "subtotal": 12.5,
+      "taxAmount": 1.25,
+      "total": 12.5,
+      "timestamp": "2026-06-08T13:27:34.282Z",
+      "items": [
+        {
+          "name": "Calamares a la Andaluza con Alioli de Lima",
+          "quantity": 1,
+          "priceUnit": 12.5,
+          "priceTotal": 12.5
+        }
+      ],
+      "splitMethod": "por_lineas"
+    }
+  ]
+}

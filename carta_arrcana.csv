@@ -1,0 +1,22 @@
+Categoría;Nombre;Descripción;Precio;IVA;Stock;Alérgenos;Disponible
+Entrantes;Tosta de Sardina Ahumada;Tosta de pan artesano con sardina ahumada, tomate cher y aliño cítrico;7.50;10;unlimited;pescado, gluten;true
+Entrantes;Carpaccio de Gamba Roja;Carpaccio de gamba roja de Denia con vinagreta de mostaza antigua;9.00;10;unlimited;crustaceos, mostaza;true
+Entrantes;Croquetas de Boletus;Cremosas de boletus edulis con parmesano (4 uds);6.00;10;unlimited;gluten, lacteos;true
+Ensaladas;Ensalada Arrcana;Mix de hojas, queso de cabra, nueces, granada y vinagreta de miel;8.50;10;unlimited;lacteos, frutos_secos;true
+Ensaladas;Ensalada de Ventresca;Ventresca de bonito, huevo duro, tomate, aceituna negra y cebolla roja;7.50;10;unlimited;huevo, pescado;true
+Arroces;Arroz de Verduras y Setas;Arroz bomba con verduras de temporada y setas variadas;12.00;10;unlimited;;true
+Arroces;Arroz de Marisco;Bomba con gambas, mejillones, calamares y alioli;14.50;10;unlimited;crustaceos, moluscos;true
+Arroces;Arroz Negro;Calamar, tinta, allioli y limón;13.50;10;unlimited;moluscos, crustaceos;true
+Principales;Rape a la Gallega;Rape confitado con cachelada, pimentón y aceite de oliva virgen;16.90;10;unlimited;pescado;true
+Principales;Secreto Ibérico;Secreto ibérico a la brasa con pimientos de Padrón y patata panadera;15.50;10;unlimited;;true
+Principales;Tataki de Atún;Atún rojo sellado con sésamo, wok de verduras y salsa teriyaki;18.00;10;unlimited;pescado, soja, sésamo;true
+Principales;Steak Tartar de Ternera;Ternera gallega picada a cuchillo con yema de huevo y tostas;16.00;10;unlimited;huevo, gluten;true
+Bebidas y Bodega;Vino Blanco Albariño;Copa de Albariño DO Rías Baixas;3.50;21;unlimited;sulfitos;true
+Bebidas y Bodega;Vino Tinto Ribera del Duero;Copa de Ribera del Duero Crianza;4.00;21;unlimited;sulfitos;true
+Bebidas y Bodega;Gin Tonic Premium;Ginebra Premium con tónica artesanal, bayas y enebro;8.00;21;unlimited;;true
+Bebidas y Bodega;Cerveza Artesana IPA;Botella 33cl IPA artesana;3.00;21;unlimited;gluten;true
+Bebidas y Bodega;Agua Mineral;Botella de agua mineral natural 50cl;1.50;21;unlimited;;true
+Bebidas y Bodega;Refresco de Limón;Refresco artesanal de limón 33cl;2.50;21;unlimited;;true
+Postres;Torrija Caramelizada;Torrija de brioche con helado de vainilla y caramelo salado;6.00;10;unlimited;gluten, lacteos, huevo;true
+Postres;Crema Catalana;Crema catalana artesana con azúcar quemado;5.00;10;unlimited;lacteos, huevo;true
+Postres;Coulant de Chocolate;Coulant de chocolate negro con helado de menta;6.50;10;unlimited;lacteos, huevo, gluten;true

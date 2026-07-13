@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  # Instancia de GastroOS para Clientes (Mesa/Carta QR)
+  client-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - APP_TYPE=client
+      - PORT=3000
+      - APP_URL=${SERVICE_URL_CLIENT_APP:-http://localhost:3000}
+    volumes:
+      - db-data:/app/data
+
+  # Instancia de GastroOS para Personal (Camareros, Cocina, Barra, Admin)
+  internal-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - APP_TYPE=internal
+      - PORT=3000
+      - APP_URL=${SERVICE_URL_INTERNAL_APP:-http://localhost:3001}
+    volumes:
+      - db-data:/app/data
+
+# Volumen persistente y compartido para mantener sincronizada la base de datos SQLite
+volumes:
+  db-data:
+    driver: local
