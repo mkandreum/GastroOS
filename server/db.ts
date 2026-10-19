@@ -13,8 +13,11 @@ export { hashPassword, verifyPassword } from "./security";
 const DB_DIR = process.env.DB_DIR ? path.resolve(process.env.DB_DIR) : path.join(process.cwd(), "data");
 const DB_FILE = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.join(DB_DIR, "restaurante.db");
 
-if (!fs.existsSync(path.dirname(DB_FILE))) {
+try {
   fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+  fs.accessSync(path.dirname(DB_FILE), fs.constants.W_OK);
+} catch {
+  throw new Error(`[DB] El directorio ${path.dirname(DB_FILE)} no existe o no tiene permisos de escritura. Revisa el volumen de datos o DB_DIR.`);
 }
 
 function createDbConnection(): Database.Database {

@@ -78,6 +78,8 @@ docker compose up -d --build
 
 `JWT_SECRET` y `ADMIN_PASSWORD` son obligatorios. El arranque falla de forma intencionada si faltan. Los dos servicios comparten el volumen `db-data` y el bus de eventos persistente.
 
+El entrypoint arranca como root solo para crear y reparar los permisos de `/app/data`, y después baja a `node` con `su-exec`. Si usas un volumen existente con otra propiedad, se corrige automáticamente. Si el volumen está montado como solo lectura, el servidor falla con un mensaje claro de permisos.
+
 ## Variables de entorno
 
 | Variable | Obligatoria | Descripción |
