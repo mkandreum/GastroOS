@@ -7,13 +7,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import { 
   motion, AnimatePresence 
 } from "motion/react";
-import { 
-  Utensils, Beef, GlassWater, IceCream, ShoppingBag, Info, 
-  ChevronDown, MessageSquare, Check, X, Bell, ListTodo, AlertTriangle, RefreshCw, QrCode
+import {
+  Utensils, Beef, GlassWater, IceCream, ShoppingBag, Info,
+  Check, X, ListTodo, AlertTriangle, QrCode, Soup, Salad, Wheat, CakeSlice, Wine, Trash2, Loader2
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
+import { useFocusTrap } from "./useFocusTrap";
 import { Category, Product, ModifierGroup, ModifierOption, SelectedModifier, Table } from "../types";
-import { Html5Qrcode } from "html5-qrcode";
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -74,11 +75,12 @@ const fuzzyMatch = (text: string, query: string): boolean => {
 
 interface ClientViewProps {
   tableNumber: number | null;
+  tableToken?: string | null;
   onUnlockRoles?: () => void;
   isKioskMode?: boolean;
 }
 
-export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = false }: ClientViewProps) {
+export default function ClientView({ tableNumber, tableToken = null, onUnlockRoles, isKioskMode = false }: ClientViewProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [tableInfo, setTableInfo] = useState<Table | null>(null);
@@ -99,6 +101,8 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
   const [cartTrigger, setCartTrigger] = useState(0);
   const [flyingParticles, setFlyingParticles] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [menuLoading, setMenuLoading] = useState(true);
+  const cartTrapRef = useFocusTrap(isCartOpen);
 
   const triggerFlyParticle = (e: React.MouseEvent) => {
     const id = Date.now() + Math.random();
@@ -119,6 +123,9 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
   const [scannerError, setScannerError] = useState("");
   const [isCallWaiterModalOpen, setIsCallWaiterModalOpen] = useState(false);
   const [callingWaiter, setCallingWaiter] = useState(false);
+  const modifierTrapRef = useFocusTrap(selectedProductForExtras !== null);
+  const waiterCallTrapRef = useFocusTrap(isCallWaiterModalOpen);
+  const scannerTrapRef = useFocusTrap(isScannerOpen);
 
   const handleCallWaiter = async (reason: "cuenta" | "ayuda" | "cubiertos" | "limpieza" | "duda") => {
     if (!tableNumber) return;
@@ -127,7 +134,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
       const res = await fetch("/api/waiter-calls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableId: tableNumber, reason })
+        body: JSON.stringify({ tableId: `table-${tableNumber}`, reason })
       });
       if (res.ok) {
         toast("🛎️ Camarero avisado. ¡Enseguida irá a tu mesa!", "success");
@@ -148,6 +155,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
       const url = new URL(decodedText);
       const params = new URLSearchParams(url.search);
       const mesaParam = params.get("mesa") || params.get("table");
+      const scannedToken = params.get("t");
       
       let mesaNum: number | null = null;
       if (mesaParam) {
@@ -165,7 +173,8 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
         setIsScannerOpen(false);
         const currentUrl = new URL(window.location.href);
         currentUrl.searchParams.set("mesa", String(mesaNum));
-        window.location.href = currentUrl.toString(); // Forzar recarga con redirección limpia
+        if (scannedToken) currentUrl.searchParams.set("t", scannedToken);
+        window.location.href = currentUrl.toString();
       } else {
         toast("Código QR no válido. Asegúrate de escanear un código de mesa de GastroOS.", "error");
       }
@@ -185,39 +194,37 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
   };
 
   useEffect(() => {
-    let qrScanner: Html5Qrcode | null = null;
+    let qrScanner: any = null;
     if (isScannerOpen) {
       setScannerError("");
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
         const scannerElement = document.getElementById("qr-reader");
-        if (scannerElement) {
+        if (!scannerElement) return;
+        try {
+          const { Html5Qrcode } = await import("html5-qrcode");
           qrScanner = new Html5Qrcode("qr-reader");
-          qrScanner.start(
+          await qrScanner.start(
             { facingMode: "environment" },
             {
               fps: 10,
-              qrbox: (width, height) => {
+              qrbox: (width: number, height: number) => {
                 const size = Math.min(width, height) * 0.7;
                 return { width: size, height: size };
               }
             },
-            (decodedText) => {
-              handleDecodedQR(decodedText);
-            },
-            (errorMessage) => {
-              console.log("Scanner loop:", errorMessage);
-            }
-          ).catch(err => {
-            console.error("Fallo al iniciar cámara:", err);
-            setScannerError("No se pudo acceder a la cámara. Por favor, concede permisos.");
-          });
+            (decodedText: string) => handleDecodedQR(decodedText),
+            () => {}
+          );
+        } catch (err) {
+          console.error("Fallo al iniciar cámara:", err);
+          setScannerError("No se pudo acceder a la cámara. Concede permisos o introduce la mesa manualmente.");
         }
       }, 300);
 
       return () => {
         clearTimeout(timer);
-        if (qrScanner && qrScanner.isScanning) {
-          qrScanner.stop().catch(err => console.error("Error deteniendo escáner:", err));
+        if (qrScanner?.isScanning) {
+          qrScanner.stop().catch(() => {});
         }
       };
     }
@@ -236,18 +243,19 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
   }, []);
 
   const tableId = tableNumber ? `table-${tableNumber}` : null;
+  const canOrder = Boolean(tableNumber && tableToken);
 
   useEffect(() => {
     fetchMenu();
-    if (tableNumber) {
+    if (tableNumber && tableToken) {
       fetchTableInfo();
       const interval = setInterval(async () => {
         await fetchTableInfo();
         fetchMyOrders();
-      }, 4000); // Polling rápido para estado del pedido en tiempo real
+      }, 8000);
       return () => clearInterval(interval);
     }
-  }, [tableNumber]);
+  }, [tableNumber, tableToken]);
 
   useEffect(() => {
     if (activeTab === "orders") {
@@ -256,44 +264,43 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
   }, [activeTab]);
 
   const fetchMenu = async () => {
+    setMenuLoading(true);
     try {
       const [resCat, resProd] = await Promise.all([
         fetch("/api/categories"),
         fetch("/api/products")
       ]);
       if (resCat.ok && resProd.ok) {
-        setCategories(await resCat.json());
+        const catData: Category[] = await resCat.json();
         const prodData: Product[] = await resProd.json();
+        setCategories(catData);
         setProducts(prodData);
-        // Autoseleccionar la primera disponible
-        if (prodData.length > 0) {
-          const firstAvailableCat = prodData.find(p => p.available)?.categoryId;
-          if (firstAvailableCat) setSelectedCategory(firstAvailableCat);
-        }
+        const hasProducts = (category: Category) => prodData.some((product) => product.categoryId === category.id && product.available);
+        const preferred = catData.find((category) => /entrante/i.test(category.name) && hasProducts(category)) || catData.find(hasProducts);
+        if (preferred) setSelectedCategory(preferred.id);
       }
     } catch (err) {
       console.error(err); toast("Error al cargar el menú. Verifica tu conexión.", "error");
+    } finally {
+      setMenuLoading(false);
     }
   };
 
   const fetchTableInfo = async () => {
-    if (!tableId) return;
+    if (!tableId || !tableToken) return;
     try {
-      const res = await fetch("/api/tables");
+      const res = await fetch(`/api/tables/${tableId}`);
       if (res.ok) {
-        const tables: Table[] = await res.json();
-        const current = tables.find(t => t.id === tableId);
-        if (current) {
-          setTableInfo(current);
-        }
+        const current: Table = await res.json();
+        setTableInfo(current);
       }
     } catch (err) {
-      console.error(err); toast("Error al obtener información de la mesa.", "error");
+      console.error(err);
     }
   };
 
   const fetchMyOrders = async () => {
-    if (!tableId) return;
+    if (!tableId || !tableToken) return;
     try {
       const res = await fetch(`/api/orders?tableId=${tableId}`);
       if (res.ok) {
@@ -305,13 +312,23 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
     }
   };
 
-  const getCategoryIcon = (iconName?: string) => {
+  const getCategoryIcon = (iconName?: string, name?: string) => {
     switch (iconName) {
-      case "Utensils": return <Utensils className="w-5 h-5" />;
+      case "Soup": return <Soup className="w-5 h-5" />;
+      case "Salad": return <Salad className="w-5 h-5" />;
+      case "Wheat": return <Wheat className="w-5 h-5" />;
       case "Beef": return <Beef className="w-5 h-5" />;
       case "GlassWater": return <GlassWater className="w-5 h-5" />;
       case "IceCream": return <IceCream className="w-5 h-5" />;
-      default: return <Utensils className="w-5 h-5" />;
+      default: {
+        const lower = (name || "").toLowerCase();
+        if (lower.includes("ensalada")) return <Salad className="w-5 h-5" />;
+        if (lower.includes("arroz")) return <Wheat className="w-5 h-5" />;
+        if (lower.includes("bebida") || lower.includes("vino")) return <GlassWater className="w-5 h-5" />;
+        if (lower.includes("postre")) return <IceCream className="w-5 h-5" />;
+        if (lower.includes("entrante")) return <Soup className="w-5 h-5" />;
+        return <Utensils className="w-5 h-5" />;
+      }
     }
   };
 
@@ -390,6 +407,10 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
     });
   };
 
+  const removeFromCart = (uniqueId: string) => {
+    setCart(prev => prev.filter(item => item.uniqueId !== uniqueId));
+  };
+
   const updateCartQty = (uniqueId: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.uniqueId === uniqueId) {
@@ -437,7 +458,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
         fetchMyOrders();
         fetchTableInfo();
       } else {
-        const error = await res.json();
+        const error = await res.json().catch(() => ({ error: "No se pudo enviar el pedido." }));
         setErrorMsg(error.error || "Fallo al procesar el pedido con el servidor.");
       }
     } catch (err) {
@@ -504,7 +525,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
               title="Llamar al Camarero"
             >
               <span>🛎️</span>
-              <span className="hidden xs:inline text-xs font-black">Llamar</span>
+              <span className="hidden sm:inline text-xs font-black">Llamar</span>
             </button>
           )}
 
@@ -601,7 +622,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                         ? "bg-indigo-600 text-white shadow-md ring-4 ring-indigo-100 scale-105" 
                         : "bg-slate-50 border border-slate-200 text-slate-500 hover:border-slate-350"
                     }`}>
-                      {getCategoryIcon(cat.icon)}
+                      {getCategoryIcon(cat.icon, cat.name)}
                     </div>
                     <span className={`text-[10px] font-black uppercase tracking-wider text-center ${
                       isActive ? "text-indigo-600 font-extrabold" : "text-slate-500 font-bold"
@@ -654,10 +675,15 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="p-3.5 sm:p-4 space-y-4 max-w-lg mx-auto w-full flex-1"
+            className="p-3.5 sm:p-4 max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 content-start"
           >
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
+            {menuLoading ? (
+              <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-semibold text-ink-muted">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Cargando carta
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-slate-500">
                 <p className="text-sm">No hay productos disponibles en esta categoría.</p>
               </div>
             ) : (
@@ -674,8 +700,12 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                   }`}
                   id={`product_card_${p.id}`}
                 >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-50 border border-indigo-100 text-indigo-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-base sm:text-lg pointer-events-none relative">
-                    🍽️
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-50 to-slate-100 border border-indigo-100 text-indigo-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-base sm:text-lg pointer-events-none relative overflow-hidden [&>svg]:w-7 [&>svg]:h-7">
+                    {p.image && p.image !== "default.jpg" ? (
+                      <img src={p.image} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      getCategoryIcon(categories.find((category) => category.id === p.categoryId)?.icon, p.name)
+                    )}
                     {inCartQty > 0 && (
                       <span className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">{inCartQty}</span>
                     )}
@@ -719,7 +749,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                             <span className="text-slate-500">Quedan {p.stock}</span>
                           )
                         ) : (
-                          <span className="text-emerald-500 font-medium">● En cocina</span>
+                          <span className="text-emerald-700 font-semibold">Disponible</span>
                         )}
                       </span>
 
@@ -736,7 +766,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                         }`}
                         id={`btn_add_${p.id}`}
                       >
-                        <span>{inCartQty > 0 ? `Añadir (+${inCartQty})` : "Añadir"}</span>
+                        <span>Añadir</span>
                         {p.modifierGroups && p.modifierGroups.length > 0 && (
                           <span className="text-[9px] text-indigo-300 font-medium">+</span>
                         )}
@@ -753,7 +783,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
 
       {/* VISTA PRINCIPAL: MIS PEDIDOS (LOGS) */}
       {activeTab === "orders" && (
-        <main className="p-4 max-w-lg mx-auto w-full flex-1">
+        <main className="p-4 max-w-3xl mx-auto w-full flex-1">
           <h2 className="text-base font-extrabold tracking-tight text-slate-800 mb-3 flex items-center space-x-1.5">
             <ListTodo className="w-5 h-5 text-indigo-600" />
             <span>Seguimiento de Comandas</span>
@@ -849,7 +879,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
 
                     {/* Total y barra de progreso */}
                     <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
-                      <span className="text-xs font-semibold text-slate-500">Monto total pedido</span>
+                      <span className="text-xs font-semibold text-slate-500">Total del pedido</span>
                       <span className="text-sm font-black text-indigo-600">{order.totalAmount.toFixed(2)}€</span>
                     </div>
 
@@ -910,6 +940,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              ref={cartTrapRef}
               className="bg-white rounded-t-2xl w-full max-w-md p-5 pb-6 shadow-2xl relative z-10 flex flex-col max-h-[85vh]"
               id="basket_drawer_modal"
             >
@@ -990,6 +1021,14 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                           >
                             +
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.uniqueId)}
+                            className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded flex items-center justify-center text-rose-600 hover:bg-rose-50 active:scale-95 transition"
+                            aria-label="Eliminar producto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1004,8 +1043,8 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                     <span className="text-[10px] font-bold text-slate-500 block">FORMA DE PAGO</span>
                     <span className="text-xs font-semibold text-slate-700">Se abona al marchar con el camarero</span>
                   </div>
-                  <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded inline-flex items-center">
-                    Pago seguro M-Mesa
+                  <span className="text-xs bg-olive/10 text-olive font-bold px-2 py-1 rounded inline-flex items-center">
+                    Cuenta única de la mesa
                   </span>
                 </div>
               </div>
@@ -1020,18 +1059,18 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                 <motion.button
                   whileTap={{ scale: 0.96 }}
                   type="button"
-                  disabled={loading || !tableNumber}
+                  disabled={loading || !canOrder}
                   onClick={submitOrder}
                   className="w-full bg-slate-950 hover:bg-indigo-600 disabled:bg-slate-300 text-white font-extrabold text-sm py-4 rounded-xl flex justify-center items-center space-x-2 shadow-md cursor-pointer transition"
                   id="btn_send_kitchen"
                 >
                   {loading ? (
                     <span>Procesando comanda...</span>
-                  ) : !tableNumber ? (
-                    <span>⚠️ Escanea QR de Mesa para Pedir</span>
+                  ) : !canOrder ? (
+                    <span>Escanea el QR físico de tu mesa para pedir</span>
                   ) : (
                     <>
-                      <span>🔥 Enviar Pedido a Cocina / Barra</span>
+                      <span>Enviar pedido a cocina y barra</span>
                     </>
                   )}
                 </motion.button>
@@ -1058,6 +1097,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
+              ref={modifierTrapRef}
               className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl relative max-h-[85vh] flex flex-col z-10 overflow-hidden"
               id="modifier_modal"
             >
@@ -1078,6 +1118,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
                 <button
                   type="button"
                   onClick={() => setSelectedProductForExtras(null)}
+                  data-close-modal
                   className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 transition cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -1226,10 +1267,12 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
+              ref={scannerTrapRef}
               className="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl flex flex-col relative"
             >
               <button
                 onClick={closeScanner}
+                data-close-modal
                 className="absolute top-3 right-3 text-slate-400 hover:text-slate-655 font-extrabold text-lg p-1 cursor-pointer"
                 aria-label="Cerrar Escáner"
               >
@@ -1281,6 +1324,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
               animate={isMobile ? { y: 0 } : { scale: 1, opacity: 1 }}
               exit={isMobile ? { y: "100%" } : { scale: 0.95, opacity: 0 }}
               transition={isMobile ? { type: "spring", damping: 25, stiffness: 220 } : { duration: 0.15 }}
+              ref={waiterCallTrapRef}
               className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl relative max-h-[90vh] flex flex-col z-10"
             >
               <h3 className="text-base font-extrabold text-slate-900 mb-2">🛎️ ¿En qué podemos ayudarte?</h3>
@@ -1337,6 +1381,7 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
               <button
                 type="button"
                 onClick={() => setIsCallWaiterModalOpen(false)}
+                data-close-modal
                 className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs transition cursor-pointer"
               >
                 Cancelar
@@ -1350,15 +1395,16 @@ export default function ClientView({ tableNumber, onUnlockRoles, isKioskMode = f
       {flyingParticles.map(p => (
         <motion.div
           key={p.id}
-          initial={{ left: p.x, top: p.y, opacity: 1, scale: 1.5 }}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 1.4 }}
           animate={{
-            left: [p.x, p.x - 50, window.innerWidth / 2],
-            top: [p.y, p.y - 150, window.innerHeight - 80],
+            x: [0, -50, window.innerWidth / 2 - p.x],
+            y: [0, -150, window.innerHeight - 80 - p.y],
             opacity: [1, 0.9, 0],
-            scale: [1.5, 1.2, 0.4]
+            scale: [1.4, 1.1, 0.4]
           }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="fixed pointer-events-none z-50 text-base flex items-center justify-center bg-indigo-600 text-white rounded-full w-5 h-5 font-black shadow-lg"
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          style={{ left: p.x, top: p.y }}
+          className="fixed pointer-events-none z-50 text-base flex items-center justify-center bg-olive text-white rounded-full w-5 h-5 font-black shadow-lg"
         >
           🍔
         </motion.div>

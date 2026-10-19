@@ -17,6 +17,7 @@ import { authHeaders } from "./api";
 import { Table, Receipt, ReceiptLine, Order, OrderLine, OrderStatus, Product, WaiterCall, User } from "../types";
 import { usePushNotifications } from "../utils/usePushNotifications";
 import { useSSE } from "./useSSE";
+import { useFocusTrap } from "./useFocusTrap";
 
 // Utilidades de feedback háptico y sonoro
 const triggerHaptic = () => {
@@ -66,10 +67,12 @@ export default function CamareroView() {
   const [isSplitOpen, setIsSplitOpen] = useState(false);
   const [splitMethod, setSplitMethod] = useState<"completa" | "partes_iguales" | "por_lineas">("completa");
   const [dinersCount, setDinersCount] = useState<number>(2);
-  const [selectedSplitLineIds, setSelectedSplitLineIds] = useState<{ [key: string]: number }>({}); // Clave line key, Valor cantidad a pagar
+  const [selectedSplitLineIds, setSelectedSplitLineIds] = useState<{ [key: string]: number }>({});
+  const [paymentMethod, setPaymentMethod] = useState<"efectivo" | "tarjeta" | "bizum" | "otro">("efectivo");
 
   // Vista de mesas: "mapa" (posición personalizada) o "grid" (cuadrícula)
   const [tableViewMode, setTableViewMode] = useState<"mapa" | "grid">("mapa");
+  const [mapScale, setMapScale] = useState(1);
 
   // Resumen de ventas
   const [salesSummary, setSalesSummary] = useState<any[] | null>(null);
@@ -77,7 +80,9 @@ export default function CamareroView() {
 
   // Modificar ticket cerrado con auth admin
   const [modifyTicketMode, setModifyTicketMode] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("admin");
   const [adminPassword, setAdminPassword] = useState("");
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [adminAuthError, setAdminAuthError] = useState("");
   const [authSuccess, setAuthSuccess] = useState(false);
   const [closedTickets, setClosedTickets] = useState<any[]>([]);
@@ -93,6 +98,8 @@ export default function CamareroView() {
   const [closingBill, setClosingBill] = useState(false);
   const { toast } = useToast();
   const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+  const modifyTicketTrapRef = useFocusTrap(modifyTicketMode);
+  const editNoteTrapRef = useFocusTrap(editingItemNote !== null);
 
   // Web Push Notifications
   const authToken = localStorage.getItem("auth_token");
@@ -152,7 +159,7 @@ export default function CamareroView() {
   useEffect(() => {
     fetchTablesAndOrders();
     fetchCurrentUser();
-    const interval = setInterval(fetchTablesAndOrders, 5000);
+    const interval = setInterval(fetchTablesAndOrders, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -200,7 +207,7 @@ export default function CamareroView() {
     try {
       const [resTab, resOrd, resCalls] = await Promise.all([
         fetch("/api/tables"),
-        fetch("/api/orders"),
+        fetch("/api/orders?status=listo"),
         fetch("/api/waiter-calls")
       ]);
       if (resTab.ok && resOrd.ok && resCalls.ok) {
@@ -242,12 +249,11 @@ export default function CamareroView() {
 
   const handleDeleteItem = async (item: any) => {
     if (!selectedTable) return;
-    const ok = await confirm({
-      title: "Eliminar producto",
-      message: `¿Estás seguro de que quieres eliminar ${item.quantity}x ${item.name} de la cuenta de la ${selectedTable.name}?`,
-      okLabel: "Eliminar",
-      cancelLabel: "Cancelar"
-    });
+    const ok = await confirm(
+      "Eliminar producto",
+      `¿Estás seguro de que quieres eliminar ${item.quantity}x ${item.name} de la cuenta de la ${selectedTable.name}?`,
+      "danger"
+    );
     if (!ok) return;
     
     try {
@@ -374,24 +380,46 @@ export default function CamareroView() {
     }
   };
 
-  // Modificar ticket cerrado con autenticación admin de un solo uso
+  const openModifyTickets = () => {
+    setModifyTicketMode(true);
+    setAdminPassword("");
+    setAdminToken(null);
+    setAdminAuthError("");
+    setAuthSuccess(false);
+    setSelectedTicket(null);
+    setClosedTickets([]);
+  };
+
+  const fetchClosedTicketsAsAdmin = async (token: string) => {
+    const res = await fetch("/api/closed-receipts?limit=500", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("No se pudieron cargar los tickets");
+    const data = await res.json();
+    setClosedTickets(Array.isArray(data) ? data : []);
+  };
+
   const handleAdminAuth = async () => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "admin", password: adminPassword })
+        body: JSON.stringify({ username: adminUsername, password: adminPassword })
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setAuthSuccess(true);
-          setAdminAuthError("");
-        }
-      } else {
-        setAdminAuthError("Contraseña de administrador incorrecta");
+      if (!res.ok) {
+        setAdminAuthError("Credenciales de administrador incorrectas");
+        return;
       }
-    } catch (err) {
+      const data = await res.json();
+      if (!data.success || data.user?.role !== "admin") {
+        setAdminAuthError("La cuenta indicada no es administradora");
+        return;
+      }
+      setAdminToken(data.token);
+      await fetchClosedTicketsAsAdmin(data.token);
+      setAuthSuccess(true);
+      setAdminAuthError("");
+    } catch {
       setAdminAuthError("Error de conexión");
     }
   };
@@ -412,18 +440,28 @@ export default function CamareroView() {
       return sum + (isNaN(total) ? 0 : total);
     }, 0);
     try {
+      if (!adminToken) {
+        setAdminAuthError("Vuelve a autorizar con una cuenta de administrador.");
+        return;
+      }
+      const taxAmount = ticketEditItems.reduce((sum: number, item: any) => {
+        const gross = (item.priceUnit || 0) * (item.quantity || 0);
+        const rate = Number(item.taxRate) || 10;
+        return sum + (gross - gross / (1 + rate / 100));
+      }, 0);
       const res = await fetch(`/api/closed-receipts/${selectedTicket.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
         body: JSON.stringify({
           items: ticketEditItems,
           total: parseFloat(newTotal.toFixed(2)),
           subtotal: parseFloat(newTotal.toFixed(2)),
-          taxAmount: parseFloat((newTotal * 0.10).toFixed(2))
+          taxAmount: parseFloat(taxAmount.toFixed(2))
         })
       });
       if (res.ok) {
-        setPushBanner({ msg: "✅ Ticket modificado correctamente", type: "success" });
+        await fetchClosedTicketsAsAdmin(adminToken);
+        setPushBanner({ msg: "Ticket modificado correctamente", type: "success" });
         setTimeout(() => setPushBanner(null), 3000);
       } else {
         setAdminAuthError("Error al guardar cambios");
@@ -475,7 +513,7 @@ export default function CamareroView() {
   const handleCloseBill = async () => {
     if (!selectedTable) return;
 
-    let payload: any = { splitMethod };
+    let payload: any = { splitMethod, paymentMethod };
 
     // Si pagamos por líneas seleccionadas, construimos los items individuales correspondientes
     if (splitMethod === "por_lineas") {
@@ -589,8 +627,11 @@ export default function CamareroView() {
     return sum;
   };
 
+  const mapWidth = Math.max(900, ...tables.map((table) => (table.posX || 0) + (table.width || 150) + 60));
+  const mapHeight = Math.max(450, ...tables.map((table) => (table.posY || 0) + (table.height || 110) + 80));
+
   return (
-    <div className="min-h-screen bg-slate-100 p-3 md:p-4 pb-24 font-sans" id="camarero_root">
+    <div className="min-h-screen bg-paper p-3 md:p-4 pb-24 font-sans" id="camarero_root">
       
       {/* Push Banner */}
       {pushBanner && (
@@ -627,20 +668,7 @@ export default function CamareroView() {
             </span>
           ) : null}
           <button
-            onClick={async () => {
-              try {
-                const res = await fetch("/api/closed-receipts");
-                if (res.ok) {
-                  const all = await res.json();
-                  setClosedTickets(all);
-                  setModifyTicketMode(true);
-                  setAdminPassword("");
-                  setAdminAuthError("");
-                  setAuthSuccess(false);
-                  setSelectedTicket(null);
-                }
-              } catch (err) { console.error(err); toast("Error de comunicación con el servidor.", "error"); }
-            }}
+            onClick={openModifyTickets}
             className="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-3 py-2 rounded-xl border border-indigo-200 cursor-pointer transition flex items-center space-x-1"
           >
             <span>✏️</span>
@@ -713,25 +741,34 @@ export default function CamareroView() {
                 <TableIcon className="w-4 h-4 text-indigo-600" />
                 <span>Salón</span>
               </h2>
+              <div className="flex items-center gap-1">
               <div className="flex bg-slate-100 p-0.5 rounded-lg text-[11px] font-bold">
                 <button
                   onClick={() => setTableViewMode("mapa")}
                   className={`px-2.5 py-1 rounded-md cursor-pointer transition ${tableViewMode === "mapa" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"}`}
                 >
-                  🗺 Mapa
+                  Mapa
                 </button>
                 <button
                   onClick={() => setTableViewMode("grid")}
                   className={`px-2.5 py-1 rounded-md cursor-pointer transition ${tableViewMode === "grid" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"}`}
                 >
-                  📋 Parrilla
+                  Parrilla
                 </button>
+              </div>
+              {tableViewMode === "mapa" && (
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setMapScale((value) => Math.max(0.6, Math.round((value - 0.1) * 10) / 10))} className="h-7 w-7 rounded-md bg-slate-100 text-xs font-black" aria-label="Alejar plano">-</button>
+                  <span className="w-9 text-center text-[10px] font-mono text-slate-500">{Math.round(mapScale * 100)}%</span>
+                  <button onClick={() => setMapScale((value) => Math.min(1.6, Math.round((value + 0.1) * 10) / 10))} className="h-7 w-7 rounded-md bg-slate-100 text-xs font-black" aria-label="Acercar plano">+</button>
+                </div>
+              )}
               </div>
             </div>
 
             {tableViewMode === "mapa" ? (
               <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-auto touch-pan-x touch-pan-y" style={{ minHeight: 300 }}>
-                <div className="relative mx-auto" style={{ width: 900, height: 450, minWidth: 800 }}>
+                <div className="relative origin-top-left" style={{ width: mapWidth, height: mapHeight, transform: `scale(${mapScale})` }}>
                   {tables.map(table => {
                     const isFree = table.status === "libre";
                     const isOccupied = table.status === "ocupada";
@@ -741,7 +778,7 @@ export default function CamareroView() {
                     const isOthersTable = table.assignedWaiterId && table.assignedWaiterId !== currentUser?.id;
 
                     const bgColor = hasCall
-                      ? "bg-amber-400 border-amber-500 animate-pulse hover:bg-amber-500"
+                      ? "bg-amber-400 border-amber-500 animate-ring-once hover:bg-amber-500"
                       : isMyTable
                       ? "bg-indigo-100 border-indigo-400 border-3 hover:bg-indigo-200"
                       : isFree
@@ -761,7 +798,7 @@ export default function CamareroView() {
                       : "bg-sky-200 text-sky-800";
 
                     return (
-                      <div key={table.id} className="absolute" style={{ left: table.posX, top: table.posY, width: 130, height: 110 }}>
+                      <div key={table.id} className="absolute" style={{ left: table.posX, top: table.posY, width: table.width || 150, height: table.height || 110 }}>
                         {isMyTable && (
                           <span className="absolute -top-1.5 -left-1.5 bg-indigo-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full shadow z-10 border border-white">
                             Tu mesa
@@ -820,7 +857,7 @@ export default function CamareroView() {
                   const isOthersTable = table.assignedWaiterId && table.assignedWaiterId !== currentUser?.id;
 
                   const borderClass = hasCall
-                    ? "bg-amber-400 border-amber-500 animate-pulse hover:bg-amber-500"
+                    ? "bg-amber-400 border-amber-500 animate-ring-once hover:bg-amber-500"
                     : isMyTable
                     ? "bg-indigo-50 border-indigo-300 border-2 hover:bg-indigo-100"
                     : isFree
@@ -907,33 +944,34 @@ export default function CamareroView() {
             )}
           </div>
 
-          {/* RESUMEN DE VENTAS */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200">
-            <button
-              onClick={toggleSalesSummary}
-              className="w-full flex items-center justify-between text-xs font-black text-slate-700 uppercase tracking-wider cursor-pointer"
-            >
-              <span>📊 Resumen de Ventas por Mesa</span>
-              <span className="text-slate-500">{showSalesSummary ? "▲" : "▼"}</span>
-            </button>
-            {showSalesSummary && salesSummary && (
-              <div className="mt-4 divide-y divide-slate-100 max-h-48 overflow-y-auto">
-                {salesSummary.length === 0 ? (
-                  <p className="py-3 text-xs text-slate-500 text-center">Sin datos</p>
-                ) : (
-                  salesSummary.map((t: any, i: number) => (
-                    <div key={i} className="flex justify-between items-center py-2 text-xs">
-                      <span className="font-bold text-slate-800">{t.tableName}</span>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-slate-500 text-[10px]">{t.ticketCount} tickets</span>
-                        <span className="font-extrabold text-slate-900">{t.totalSales.toFixed(2)}€</span>
+          {currentUser?.role === "admin" && (
+            <div className="bg-white p-4 rounded-2xl border border-slate-200">
+              <button
+                onClick={toggleSalesSummary}
+                className="w-full flex items-center justify-between text-xs font-black text-slate-700 uppercase tracking-wider cursor-pointer"
+              >
+                <span>Resumen de ventas por mesa</span>
+                <span className="text-slate-500">{showSalesSummary ? "▲" : "▼"}</span>
+              </button>
+              {showSalesSummary && salesSummary && (
+                <div className="mt-4 divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                  {salesSummary.length === 0 ? (
+                    <p className="py-3 text-xs text-slate-500 text-center">Sin datos</p>
+                  ) : (
+                    salesSummary.map((t: any, i: number) => (
+                      <div key={i} className="flex justify-between items-center py-2 text-xs">
+                        <span className="font-bold text-slate-800">{t.tableName}</span>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-slate-500 text-[10px]">{t.ticketCount} tickets</span>
+                          <span className="font-extrabold text-slate-900">{t.totalSales.toFixed(2)}€</span>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* COMANDAS PREPARADAS FEED */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200">
@@ -1013,22 +1051,9 @@ export default function CamareroView() {
                   </div>
                   <div className="flex items-center space-x-1.5">
                     <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch("/api/closed-receipts");
-                          if (res.ok) {
-                            const all = await res.json();
-                            const tableTickets = all.filter((r: any) => r.tableId === selectedTable?.id);
-                            setClosedTickets(tableTickets);
-                            setModifyTicketMode(true);
-                            setAdminPassword("");
-                            setAdminAuthError("");
-                            setAuthSuccess(false);
-                            setSelectedTicket(null);
-                            // Cargar productos para poder añadir nuevos artículos
-                            fetch("/api/products").then(r => r.ok ? r.json() : []).then(d => setProducts(Array.isArray(d) ? d : [])).catch(() => {});
-                          }
-                          } catch (err) { console.error(err); toast("Error de comunicación con el servidor.", "error"); }
+                      onClick={() => {
+                        openModifyTickets();
+                        fetch("/api/products").then(r => r.ok ? r.json() : []).then(d => setProducts(Array.isArray(d) ? d : [])).catch(() => {});
                       }}
                       className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-lg border border-indigo-100 cursor-pointer transition"
                       title="Modificar tickets de esta mesa"
@@ -1248,6 +1273,20 @@ export default function CamareroView() {
                       </div>
                     </div>
 
+                    <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Método de pago</span>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value as any)}
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700"
+                      >
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="bizum">Bizum</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </div>
+
                     {/* Botón de cierre definitivo */}
                     <button
                       onClick={handleCloseBill}
@@ -1335,6 +1374,7 @@ export default function CamareroView() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
+              ref={modifyTicketTrapRef}
               className="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <h3 id="modify-ticket-title" className="font-extrabold text-slate-900 text-sm mb-4">✏️ Modificar Ticket Cerrado</h3>
@@ -1346,12 +1386,23 @@ export default function CamareroView() {
                   </div>
                   <div className="space-y-3">
                     <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Usuario administrador</label>
+                      <input
+                        type="text"
+                        value={adminUsername}
+                        onChange={(e) => setAdminUsername(e.target.value)}
+                        autoComplete="username"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:border-indigo-400"
+                      />
+                    </div>
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-500 mb-1">Contraseña de Administrador</label>
                       <input
                         type="password"
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         placeholder="Contraseña admin..."
+                        autoComplete="current-password"
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:border-indigo-400"
                       />
                     </div>
@@ -1531,9 +1582,10 @@ export default function CamareroView() {
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
+              ref={editNoteTrapRef}
               className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl relative"
             >
-              <h3 className="font-extrabold text-slate-900 text-sm mb-3">📝 Editar nota del plato</h3>
+              <h3 className="font-extrabold text-slate-900 text-sm mb-3">Editar nota del plato</h3>
               <p className="text-[11px] text-slate-500 mb-4">{editingItemNote.item.name}</p>
               <textarea
                 value={editingItemNote.notes}
@@ -1546,6 +1598,7 @@ export default function CamareroView() {
                 <button
                   type="button"
                   onClick={() => setEditingItemNote(null)}
+                  data-close-modal
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg text-xs transition cursor-pointer"
                 >
                   Cancelar

@@ -140,7 +140,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Validando huella / firma...</span>
+                <span>Validando credenciales...</span>
               </>
             ) : (
               <span>Iniciar Sesión Segura</span>

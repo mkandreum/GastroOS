@@ -15,8 +15,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || APP_NAME;
   const options = {
     body: data.body || "",
-    icon: data.icon || "/favicon.ico",
-    badge: "/favicon.ico",
+    icon: data.icon || "/icon.svg",
+    badge: "/icon.svg",
     tag: data.tag || "gastro-notification",
     renotify: true,
     requireInteraction: data.requireInteraction || false,

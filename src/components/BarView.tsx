@@ -12,6 +12,26 @@ import {
 } from "lucide-react";
 import { Order, OrderLine, OrderStatus } from "../types";
 import { useToast } from "./ToastProvider";
+import { useSSE } from "./useSSE";
+
+const playBarSound = () => {
+  if (typeof window === "undefined" || !("AudioContext" in window || "webkitAudioContext" in window)) return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(1800, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.15, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.3);
+  } catch { /* ignorar audio bloqueado */ }
+};
 
 export default function BarView() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -47,8 +67,8 @@ export default function BarView() {
     let textColor = isHighContrast ? "text-green-400 font-black" : "text-emerald-400";
     
     if (mins >= 12) {
-      color = isHighContrast ? "stroke-red-500 animate-pulse" : "stroke-rose-600 animate-pulse";
-      textColor = isHighContrast ? "text-red-500 font-extrabold animate-pulse" : "text-rose-500 font-extrabold animate-pulse";
+      color = isHighContrast ? "stroke-red-500 " : "stroke-rose-600 ";
+      textColor = isHighContrast ? "text-red-500 font-extrabold " : "text-rose-500 font-extrabold ";
     } else if (mins >= 5) {
       color = isHighContrast ? "stroke-yellow-400" : "stroke-amber-500";
       textColor = isHighContrast ? "text-yellow-400 font-bold" : "text-amber-400";
@@ -88,6 +108,12 @@ export default function BarView() {
   };
   const [prevCount, setPrevCount] = useState(0);
 
+  useSSE({
+    "order:created": () => { fetchBarOrders(); },
+    "order:status_changed": () => { fetchBarOrders(); },
+    "tables_updated": () => { fetchBarOrders(); }
+  });
+
   const handlePrintBarComanda = (order: Order) => {
     const barItems = order.items.filter(line => line.destination === "bar");
     if (barItems.length === 0) {
@@ -124,7 +150,7 @@ export default function BarView() {
 
   useEffect(() => {
     fetchBarOrders();
-    const interval = setInterval(fetchBarOrders, 5000);
+    const interval = setInterval(fetchBarOrders, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -142,6 +168,7 @@ export default function BarView() {
   useEffect(() => {
     if (orders.length > prevCount && prevCount > 0) {
       toast("Nuevo pedido de bebidas recibido", "info");
+      playBarSound();
     }
     setPrevCount(orders.length);
   }, [orders]);
@@ -154,10 +181,7 @@ export default function BarView() {
         
         // La barra gestiona bebidas (destination === "bar" o categoría cat-3).
         // Filtramos órdenes pendientes, en preparación o listas.
-        const barFiltered = list.filter(o => 
-          (o.status === "pendiente" || o.status === "en_preparacion" || o.status === "listo") &&
-          o.items.some(line => line.destination === "bar")
-        );
+        const barFiltered = list.filter((order) => order.items.some((line) => line.destination === "bar"));
         setOrders(barFiltered);
       }
     } catch (err) {
@@ -171,7 +195,7 @@ export default function BarView() {
       const res = await fetch(`/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus })
+        body: JSON.stringify({ status: nextStatus, station: "bar" })
       });
       if (res.ok) {
         fetchBarOrders();
@@ -182,9 +206,16 @@ export default function BarView() {
     }
   };
 
-  const pending = orders.filter(o => o.status === "pendiente");
-  const compiling = orders.filter(o => o.status === "en_preparacion");
-  const ready = orders.filter(o => o.status === "listo");
+  const stationStatus = (order: Order) => {
+    const items = order.items.filter((item) => item.destination === "bar");
+    if (items.length === 0) return "pendiente";
+    if (items.every((item) => item.stationStatus === "listo" || item.stationStatus === "servido")) return "listo";
+    if (items.some((item) => item.stationStatus === "en_preparacion")) return "en_preparacion";
+    return "pendiente";
+  };
+  const pending = orders.filter((order) => stationStatus(order) === "pendiente");
+  const compiling = orders.filter((order) => stationStatus(order) === "en_preparacion");
+  const ready = orders.filter((order) => stationStatus(order) === "listo");
 
   const rootBgClass = isHighContrast 
     ? "min-h-screen bg-black text-white p-4 md:p-6 pb-24 font-mono select-none border-8 border-yellow-400" 
@@ -254,9 +285,10 @@ export default function BarView() {
             </motion.div>
           ) : (
             orders.map((order) => {
-              const isCompleted = order.status === "listo";
-              const isCooking = order.status === "en_preparacion";
-              const isPending = order.status === "pendiente";
+              const statusForStation = stationStatus(order);
+              const isCompleted = statusForStation === "listo";
+              const isCooking = statusForStation === "en_preparacion";
+              const isPending = statusForStation === "pendiente";
 
               return (
                 <motion.div

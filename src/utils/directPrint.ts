@@ -1,17 +1,26 @@
 export async function sendZplDirectToPrinter(zpl: string, ip: string, port: number): Promise<boolean> {
+  if (window.location.protocol === "https:" && !window.location.hostname.includes("localhost")) {
+    console.warn("[DirectPrint] HTTPS bloquea la impresión directa a HTTP. Usa el modo servidor.");
+    return false;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
   try {
     const url = `http://${ip}:${port}/`;
     const resp = await fetch(url, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
-      body: zpl
+      body: zpl,
+      signal: controller.signal
     });
-    console.log(`[DirectPrint] Enviado a ${ip}:${port} (no-cors, status: ${resp.type})`);
+    console.log(`[DirectPrint] Enviado a ${ip}:${port} (${resp.type})`);
     return true;
   } catch (err) {
     console.error(`[DirectPrint] Error enviando a ${ip}:${port}:`, err);
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
