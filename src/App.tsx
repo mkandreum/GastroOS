@@ -3,24 +3,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { 
-  motion, AnimatePresence 
-} from "motion/react";
-import { 
-  ChefHat, ClipboardList, Utensils, GlassWater, Settings, LogOut, CheckSquare, 
-  HelpCircle, MessageCircleCode, Star, AlertCircle
-} from "lucide-react";
+import React, { lazy, Suspense, useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
+import { Settings, LogOut, Utensils, ClipboardList, ChefHat, GlassWater } from "lucide-react";
 
 import { UserRole, User } from "./types";
 import { ToastProvider } from "./components/ToastProvider";
 import { tryDirectPrint } from "./utils/directPrint";
-import ClientView from "./components/ClientView";
-import CamareroView from "./components/CamareroView";
-import ChefView from "./components/ChefView";
-import BarView from "./components/BarView";
-import AdminView from "./components/AdminView";
-import AuthView from "./components/AuthView";
+import ErrorBoundary from "./components/ErrorBoundary";
+
+const ClientView = lazy(() => import("./components/ClientView"));
+const CamareroView = lazy(() => import("./components/CamareroView"));
+const ChefView = lazy(() => import("./components/ChefView"));
+const BarView = lazy(() => import("./components/BarView"));
+const AdminView = lazy(() => import("./components/AdminView"));
+const AuthView = lazy(() => import("./components/AuthView"));
+
+function RoleFallback() {
+  return (
+    <div className="flex flex-1 items-center justify-center p-10">
+      <div className="flex items-center gap-3 text-sm font-semibold text-ink-muted">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-olive" />
+        Cargando terminal
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [appType, setAppType] = useState<string>("both"); // "client", "internal", "both"
@@ -31,6 +39,7 @@ export default function App() {
   
   // Mesa seleccionada para simulaciones de Cliente
   const [selectedSimTable, setSelectedSimTable] = useState<number | null>(null);
+  const [tableToken, setTableToken] = useState<string | null>(null);
   const [isKioskMode, setIsKioskMode] = useState(false); // Si entra escaneando QR físico
   const [activeTicketToPrint, setActiveTicketToPrint] = useState<any | null>(null);
 
@@ -102,6 +111,7 @@ export default function App() {
     // Ejemplo: URL/?mesa=4 o URL/?table=4
     const params = new URLSearchParams(window.location.search);
     const mesaParam = params.get("mesa") || params.get("table");
+    const qrToken = params.get("t");
     
     // O vía path names, ej: /mesa/4
     const pathParts = window.location.pathname.split("/");
@@ -118,11 +128,17 @@ export default function App() {
         setSelectedSimTable(num);
         setSelectedRole("cliente");
         setIsKioskMode(true);
+        if (qrToken) {
+          setTableToken(qrToken);
+          sessionStorage.setItem(`table_token_${num}`, qrToken);
+        }
       }
     } else if (urlMesaNum && !isNaN(urlMesaNum)) {
       setSelectedSimTable(urlMesaNum);
       setSelectedRole("cliente");
       setIsKioskMode(true);
+      const saved = sessionStorage.getItem(`table_token_${urlMesaNum}`);
+      if (saved) setTableToken(saved);
     }
 
     // 2. Cargar token guardado para agilizar testeo si existe
@@ -141,6 +157,20 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (selectedRole !== "cliente" || !selectedSimTable || currentUser?.role !== "admin" || tableToken) return;
+    fetch("/api/tables")
+      .then((response) => response.ok ? response.json() : [])
+      .then((tables: any[]) => {
+        const table = tables.find((entry) => entry.number === selectedSimTable);
+        if (table?.qrCodeData) {
+          setTableToken(table.qrToken || null);
+          sessionStorage.setItem(`table_token_${selectedSimTable}`, table.qrToken || "");
+        }
+      })
+      .catch(() => {});
+  }, [selectedRole, selectedSimTable, currentUser, tableToken]);
+
   const handleLoginSuccess = useCallback((user: User, token: string) => {
     setCurrentUser(user);
     setSessionToken(token);
@@ -150,6 +180,10 @@ export default function App() {
   }, []);
 
   const handleLogout = useCallback(() => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    }
     setCurrentUser(null);
     setSessionToken(null);
     localStorage.removeItem("auth_user");
@@ -176,16 +210,21 @@ export default function App() {
                       urlString.startsWith(window.location.origin) || 
                       urlString.startsWith("http://localhost:3000");
 
-      if (token && isLocal) {
+      let sentAuth = false;
+      if (isLocal) {
         const headers = new Headers(updatedInit.headers);
-        if (!headers.has("Authorization")) {
+        if (token && !headers.has("Authorization")) {
           headers.set("Authorization", `Bearer ${token}`);
+          sentAuth = true;
+        }
+        if (tableToken && !headers.has("X-Table-Token")) {
+          headers.set("X-Table-Token", tableToken);
         }
         updatedInit.headers = headers;
       }
 
       const response = await originalFetch(input, updatedInit);
-      if (response.status === 401 && !urlString.includes("/api/auth/login")) {
+      if (response.status === 401 && sentAuth && !urlString.includes("/api/auth/login")) {
         window.dispatchEvent(new Event("unauthorized"));
       }
       return response;
@@ -205,7 +244,7 @@ export default function App() {
       window.fetch = originalFetch;
       window.removeEventListener("unauthorized", handleUnauthorized);
     };
-  }, [handleLogout]);
+  }, [handleLogout, tableToken]);
 
   const handleUnlockKiosk = () => {
     // Si están testeando sobre el QR de cliente locked y quieren volver a ver los controles de rol
@@ -225,8 +264,10 @@ export default function App() {
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <ToastProvider>
-    <div className="min-h-screen bg-slate-50 grid-bg flex flex-col text-slate-800 selection:bg-indigo-600 selection:text-white" id="unified_master_app">
+    <ErrorBoundary>
+    <div className="min-h-screen bg-paper grid-bg flex flex-col text-ink selection:bg-olive selection:text-white" id="unified_master_app">
       
       {/* HEADER ACTORES / SIMULADOR GENERAL (Oculto en Kiosk QR real del comensal o si appType es client) */}
       {!isKioskMode && appType !== "client" && (
@@ -238,7 +279,7 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-bold text-base tracking-tight text-slate-900">GASTRO-OS</h1>
-                <span className="text-slate-400 font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-black">v1.0.0</span>
+                <span className="text-slate-400 font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-black">v1.1.0</span>
               </div>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Sistema de Gestión de Hostelería</p>
             </div>
@@ -254,7 +295,7 @@ export default function App() {
                     selectedRole === "cliente" ? "bg-slate-900 text-white" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
                   }`}
                 >
-                  📱 Cliente
+                  Cliente
                 </button>
               )}
 
@@ -264,7 +305,7 @@ export default function App() {
                   selectedRole === "camarero" ? "bg-amber-150 text-amber-805 border border-amber-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
                 }`}
               >
-                🤵 Camarero
+                Camarero
               </button>
 
               <button
@@ -273,7 +314,7 @@ export default function App() {
                   selectedRole === "cocina" ? "bg-red-100 text-red-700 border border-red-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
                 }`}
               >
-                🍳 Cocina
+                Cocina
               </button>
 
               <button
@@ -282,7 +323,7 @@ export default function App() {
                   selectedRole === "bar" ? "bg-sky-100 text-sky-850 border border-sky-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
                 }`}
               >
-                🍹 Barra
+                Barra
               </button>
 
               <button
@@ -291,15 +332,15 @@ export default function App() {
                   selectedRole === "admin" ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
                 }`}
               >
-                ⚙️ Admin
+                Admin
               </button>
             </div>
           )}
 
           <div className="flex items-center gap-4 text-[11px] font-semibold text-slate-650 shrink-0">
-            <div className="hidden lg:flex items-center gap-2 font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              IMPRESORA: ONLINE (ZPL)
+            <div className="hidden lg:flex items-center gap-2 font-mono text-ink-muted">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              SERVIDOR CONECTADO
             </div>
             
             {/* Estado de login activo */}
@@ -318,14 +359,14 @@ export default function App() {
             ) : (
               <div className="flex items-center gap-2">
                 <div className="bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 font-mono text-[10px] hidden sm:block">
-                  API: CONECTADA
+                  SERVIDOR OK
                 </div>
                 {appType !== "client" && (
                   <button
                     onClick={() => setSelectedRole("admin")}
                     className="bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-lg shadow-xs flex items-center gap-1 cursor-pointer"
                   >
-                    🔑 Acceso Personal
+                    Acceso personal
                   </button>
                 )}
               </div>
@@ -338,7 +379,7 @@ export default function App() {
       {!isKioskMode && selectedRole === "cliente" && appType === "both" && (
         <section className="bg-slate-900 text-slate-400 px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 tracking-tight shrink-0 gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-amber-400 font-bold shrink-0">⚡ Simulador QR:</span>
+            <span className="text-amber-400 font-bold shrink-0">Simulador QR</span>
             <span className="text-slate-300">Mesa virtual activa:</span>
             
             <select
@@ -349,7 +390,9 @@ export default function App() {
                 // Si cambiamos, forzamos redirección simulada borrando/actualizando query para que rutee limpio
                 const url = new URL(window.location.href);
                 url.searchParams.set("mesa", String(num));
+                url.searchParams.delete("t");
                 window.history.pushState({}, "", url.toString());
+                setTableToken(null);
               }}
               className="bg-slate-850 text-white font-black border border-slate-700 rounded px-2.5 py-0.5 cursor-pointer focus:outline-none"
               id="simulated_table_picker"
@@ -360,13 +403,14 @@ export default function App() {
             </select>
           </div>
           <span className="hidden sm:inline-flex items-center text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-            ● Emulación de dispositivo móvil comensal
+            Emulación de dispositivo móvil
           </span>
         </section>
       )}
 
       {/* CONTENEDOR CENTRAL DE PANTALLAS */}
       <div className="flex-1 flex flex-col justify-stretch">
+        <Suspense fallback={<RoleFallback />}>
         <AnimatePresence mode="wait">
           {selectedRole === "cliente" && (
             <motion.div
@@ -379,6 +423,7 @@ export default function App() {
             >
               <ClientView 
                 tableNumber={selectedSimTable} 
+                tableToken={tableToken}
                 onUnlockRoles={handleUnlockKiosk}
                 isKioskMode={isKioskMode}
               />
@@ -453,11 +498,14 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+        </Suspense>
       </div>
 
       <PrintSection data={activeTicketToPrint} />
     </div>
+    </ErrorBoundary>
     </ToastProvider>
+    </MotionConfig>
   );
 }
 
@@ -480,7 +528,9 @@ function PrintSection({ data }: { data: any }) {
     }
   };
 
-  const facturaNum = `F-${String(data.ticketNumber ? parseInt(data.ticketNumber.replace(/\D/g, "").slice(0, 5), 10) || 1000 : 1000).padStart(5, "0")}`;
+  const facturaNum = data.invoiceNumber
+    ? `F-${String(data.invoiceNumber).padStart(5, "0")}`
+    : `F-${String(data.ticketNumber ? parseInt(data.ticketNumber.replace(/\D/g, "").slice(0, 5), 10) || 1000 : 1000).padStart(5, "0")}`;
 
   return (
     <div id="print-section" className="print-ticket" style={{ width: "280px", margin: "0 auto", padding: "10px", fontSize: "11px" }}>
@@ -494,8 +544,9 @@ function PrintSection({ data }: { data: any }) {
         <div>Mesa: {data.tableName}</div>
         <div>{formatDate(data.timestamp)}</div>
         {data.ticketNumber && <div>Ticket #: {data.ticketNumber}</div>}
+        {data.paymentMethod && <div>Pago: {data.paymentMethod}</div>}
         {data.splitMethod && data.splitMethod !== "completa" && (
-          <div>Metodo Pago: Fraccionado ({data.splitMethod.replace("_", " ")})</div>
+          <div>Fraccionado ({data.splitMethod.replace("_", " ")})</div>
         )}
       </div>
 
@@ -563,8 +614,8 @@ function PrintSection({ data }: { data: any }) {
       <div style={{ textAlign: "center", fontSize: "9px", marginTop: "10px", display: "flex", flexDirection: "column", gap: "1px" }}>
         {data.type === "bill" ? (
           <>
-            <div>!Muchas gracias por su visita!</div>
-            <div>GastroOS - GastroOS.com</div>
+            <div>¡Muchas gracias por su visita!</div>
+            <div>GastroOS</div>
           </>
         ) : (
           <div style={{ fontWeight: "bold" }}>*** COMANDA DE {data.type === "kitchen" ? "COCINA" : "BARRA"} ***</div>

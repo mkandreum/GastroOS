@@ -1,0 +1,17 @@
+{
+  "name": "GastroOS",
+  "short_name": "GastroOS",
+  "description": "Gestión de pedidos, sala, cocina, barra y cobro para restaurantes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F1E8",
+  "theme_color": "#171512",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

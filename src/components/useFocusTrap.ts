@@ -8,6 +8,8 @@ export function useFocusTrap(active: boolean) {
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const container = ref.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     const focusableSelector =
       'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -49,6 +51,7 @@ export function useFocusTrap(active: boolean) {
 
     return () => {
       container.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
   }, [active]);

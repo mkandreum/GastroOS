@@ -13,6 +13,7 @@ import {
 import { Order, OrderLine, OrderStatus, Table } from "../types";
 import { useToast } from "./ToastProvider";
 import { useSSE } from "./useSSE";
+import { useFocusTrap } from "./useFocusTrap";
 
 export default function ChefView() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -23,6 +24,7 @@ export default function ChefView() {
   const [prevPendingCount, setPrevPendingCount] = useState(0);
   const [pushBanner, setPushBanner] = useState<string | null>(null);
   const { toast } = useToast();
+  const zplTrapRef = useFocusTrap(selectedZplOrder !== null);
   const [isHighContrast, setIsHighContrast] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -59,8 +61,8 @@ export default function ChefView() {
     let textColor = isHighContrast ? "text-green-400 font-black" : "text-emerald-400";
     
     if (mins >= 12) {
-      color = isHighContrast ? "stroke-red-500 animate-pulse" : "stroke-rose-600 animate-pulse";
-      textColor = isHighContrast ? "text-red-500 font-extrabold animate-pulse" : "text-rose-500 font-extrabold animate-pulse";
+      color = isHighContrast ? "stroke-red-500" : "stroke-rose-600";
+      textColor = isHighContrast ? "text-red-500 font-extrabold" : "text-rose-500 font-extrabold";
     } else if (mins >= 5) {
       color = isHighContrast ? "stroke-yellow-400" : "stroke-amber-500";
       textColor = isHighContrast ? "text-yellow-400 font-bold" : "text-amber-400";
@@ -142,7 +144,7 @@ export default function ChefView() {
 
   useEffect(() => {
     fetchChefOrders();
-    const interval = setInterval(fetchChefOrders, 4000);
+    const interval = setInterval(fetchChefOrders, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -173,16 +175,13 @@ export default function ChefView() {
   const fetchChefOrders = async () => {
     try {
       const [resOrd, resTab] = await Promise.all([
-        fetch("/api/orders"),
+        fetch("/api/orders?station=cocina&active=1"),
         fetch("/api/tables")
       ]);
       if (resOrd.ok) {
         const list: Order[] = await resOrd.json();
         
-        const chefFiltered = list.filter(o => 
-          (o.status === "pendiente" || o.status === "en_preparacion" || o.status === "listo") &&
-          o.items.some(line => line.destination === "cocina")
-        );
+        const chefFiltered = list.filter((order) => order.items.some((line) => line.destination === "cocina"));
         setOrders(chefFiltered);
       }
       if (resTab.ok) {
@@ -199,7 +198,7 @@ export default function ChefView() {
       const res = await fetch(`/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus })
+        body: JSON.stringify({ status: nextStatus, station: "cocina" })
       });
       if (res.ok) {
         fetchChefOrders();
@@ -212,21 +211,17 @@ export default function ChefView() {
 
   const loadZplDetails = async (order: Order) => {
     try {
-      const logsRes = await fetch("/api/print-logs");
-      if (logsRes.ok) {
-        const logs = await logsRes.json();
-        const found = logs.find((l: any) => l.orderId === order.id);
-        if (found) {
-          setSelectedZplText(found.zpl);
-          setSelectedZplOrder(order);
-        } else {
-          // Si no hay log aún, generamos uno local ficticio o simulado basado en el endpoint anterior
-          toast("El ZPL aún se está procesando en la cola.", "warning");
-        }
+      const response = await fetch(`/api/orders/${order.id}/zpl`);
+      if (!response.ok) {
+        toast("No se pudo cargar el ZPL de esta comanda.", "warning");
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      toast("Error al cargar ZPL.", "error");
+      const data = await response.json();
+      setSelectedZplText(data.zpl || "");
+      setSelectedZplOrder(order);
+    } catch (error) {
+      console.error(error);
+      toast("Error al cargar el ZPL.", "error");
     }
   };
 
@@ -236,10 +231,17 @@ export default function ChefView() {
     setTimeout(() => setCopyFeedback(false), 2000);
   };
 
-  // Filtrar activos por estados
-  const pendingOrders = orders.filter(o => o.status === "pendiente");
-  const cookingOrders = orders.filter(o => o.status === "en_preparacion");
-  const readyOrders = orders.filter(o => o.status === "listo");
+  const stationStatus = (order: Order) => {
+    const items = order.items.filter((item) => item.destination === "cocina");
+    if (items.length === 0) return "pendiente";
+    if (items.every((item) => item.stationStatus === "listo" || item.stationStatus === "servido")) return "listo";
+    if (items.some((item) => item.stationStatus === "en_preparacion")) return "en_preparacion";
+    return "pendiente";
+  };
+
+  const pendingOrders = orders.filter((order) => stationStatus(order) === "pendiente");
+  const cookingOrders = orders.filter((order) => stationStatus(order) === "en_preparacion");
+  const readyOrders = orders.filter((order) => stationStatus(order) === "listo");
 
   const rootBgClass = isHighContrast 
     ? "min-h-screen bg-black text-white p-4 md:p-6 pb-24 font-mono select-none border-8 border-yellow-400" 
@@ -250,7 +252,7 @@ export default function ChefView() {
       
       {/* Push Banner */}
       {pushBanner && (
-        <div className="fixed top-4 right-4 z-50 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-bold border border-rose-700 max-w-xs animate-bounce">
+        <div className="fixed top-4 right-4 z-50 bg-rose-600 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-bold border border-rose-700 max-w-xs animate-fade-in">
           {pushBanner}
         </div>
       )}
@@ -420,7 +422,7 @@ export default function ChefView() {
         <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
           <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
             <span>🟡 2. En los Fogones ({cookingOrders.length})</span>
-            <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded animate-pulse">MARCHANDO</span>
+            <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">MARCHANDO</span>
           </h2>
 
           <div className="space-y-4 overflow-y-auto flex-1 max-h-[65vh]">
@@ -590,6 +592,7 @@ export default function ChefView() {
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
+              ref={zplTrapRef}
               className="bg-slate-950 border border-slate-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl relative"
               id="zpl_details_modal"
             >

@@ -1,95 +1,147 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-display: "Outfit", sans-serif;
-  --font-mono: "JetBrains Mono", "Courier New", Courier, monospace;
+  --font-sans: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+
+  --color-paper: #F6F1E8;
+  --color-surface: #FFFDF8;
+  --color-ink: #171512;
+  --color-ink-muted: #6F675C;
+  --color-line: #E4DCCD;
+  --color-olive: #4F5D3A;
+  --color-terracotta: #B05634;
+  --color-brass: #B08A4F;
+  --color-wine: #6E2B2B;
+  --color-danger: #B3261E;
+  --color-kitchen: #101010;
+  --color-kitchen-amber: #F2A33A;
+  --color-bar: #0F2A25;
+  --color-bar-brass: #D8B46A;
+
+  --color-slate-50: #F8F5EF;
+  --color-slate-100: #F1ECE2;
+  --color-slate-200: #E4DCCD;
+  --color-slate-300: #CFC5B3;
+  --color-slate-400: #7C7264;
+  --color-slate-500: #655C50;
+  --color-slate-600: #51493F;
+  --color-slate-700: #403A32;
+  --color-slate-800: #2C2722;
+  --color-slate-900: #1C1916;
+  --color-slate-950: #12100E;
+
+  --color-indigo-50: #F3F5EC;
+  --color-indigo-100: #E6EBD8;
+  --color-indigo-200: #CDD7B5;
+  --color-indigo-300: #AFBF90;
+  --color-indigo-400: #8FA36B;
+  --color-indigo-500: #71854C;
+  --color-indigo-600: #55673A;
+  --color-indigo-700: #44522F;
+  --color-indigo-800: #394428;
+  --color-indigo-900: #303923;
+  --color-indigo-950: #1A1F12;
+
+  --color-violet-50: #FBF1EC;
+  --color-violet-100: #F7E2D8;
+  --color-violet-200: #EFC5B2;
+  --color-violet-300: #E2A086;
+  --color-violet-400: #D27C5C;
+  --color-violet-500: #C15F3D;
+  --color-violet-600: #A94A2D;
+  --color-violet-700: #8C3B25;
+  --color-violet-800: #733222;
+  --color-violet-900: #602C20;
+  --color-violet-950: #35150E;
+
+  --color-sky-50: #EEF7F3;
+  --color-sky-100: #D7EEE5;
+  --color-sky-200: #B0DDCC;
+  --color-sky-300: #7FC4AC;
+  --color-sky-400: #4FA68A;
+  --color-sky-500: #338A70;
+  --color-sky-600: #276E5A;
+  --color-sky-700: #22584A;
+  --color-sky-800: #1E473D;
+  --color-sky-900: #1A3B33;
+  --color-sky-950: #0F2A25;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #F8FAFC;
-  color: #0F172A;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
 }
 
-/* Headings use the premium Outfit display font */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
+  letter-spacing: -0.015em;
 }
 
-/* Custom Grid background utility with a very soft, premium radial pattern and linear fallback */
 .grid-bg {
-  background-image: 
-    radial-gradient(#E2E8F0 1.2px, transparent 1.2px),
-    linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  background-image:
+    radial-gradient(rgba(111, 103, 92, 0.12) 1px, transparent 1px),
+    linear-gradient(180deg, #F8F5EF 0%, #F3EEE4 100%);
   background-size: 24px 24px, 100% 100%;
   background-attachment: fixed;
 }
 
-/* Custom premium card design with glassmorphism touches, subtle border, and deep, elegant shadows */
 .gastro-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 24px -2px rgba(15, 23, 42, 0.04), 0 2px 8px -1px rgba(15, 23, 42, 0.02);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--color-surface);
+  border-radius: 18px;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 10px 30px -22px rgba(23, 21, 18, 0.35);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .gastro-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
-  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 22px 45px -28px rgba(23, 21, 18, 0.4);
+  border-color: rgba(79, 93, 58, 0.35);
 }
 
-/* Glassmorphism panel styling */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 253, 248, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(228, 220, 205, 0.9);
 }
 
-/* Form input focus styles with glowing modern ring */
 input, select, textarea {
   font-family: var(--font-sans);
-  border-radius: 14px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 12px !important;
 }
 
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none !important;
-  border-color: #6366F1 !important;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+  border-color: var(--color-olive) !important;
+  box-shadow: 0 0 0 4px rgba(79, 93, 58, 0.16) !important;
   background-color: #FFFFFF !important;
 }
 
-/* Premium Buttons styling with micro-interactions */
 button {
   font-family: var(--font-sans);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  border-radius: 14px !important;
-}
-
-button:hover {
-  transform: translateY(-1px);
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 120ms ease, box-shadow 150ms ease;
 }
 
 button:active {
-  transform: translateY(1px);
+  transform: scale(0.985);
 }
 
-/* Custom badges with modern, crisp styling */
 .status-badge {
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   font-family: var(--font-mono);
   letter-spacing: 0.06em;
@@ -100,81 +152,97 @@ button:active {
 
 .badge-urgent {
   background: #FEF2F2;
-  color: #EF4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  box-shadow: 0 2px 8px -2px rgba(239, 68, 68, 0.08);
+  color: #B3261E;
+  border: 1px solid rgba(179, 38, 30, 0.2);
 }
 
 .badge-waiting {
   background: #FFFBEB;
-  color: #D97706;
-  border: 1px solid rgba(217, 119, 6, 0.2);
-  box-shadow: 0 2px 8px -2px rgba(217, 119, 6, 0.08);
+  color: #8A5A00;
+  border: 1px solid rgba(138, 90, 0, 0.2);
 }
 
 .badge-ok {
   background: #F0FDF4;
-  color: #16A34A;
-  border: 1px solid rgba(22, 163, 74, 0.2);
-  box-shadow: 0 2px 8px -2px rgba(22, 163, 74, 0.08);
+  color: #166534;
+  border: 1px solid rgba(22, 101, 52, 0.2);
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #C9BFAE;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #A99D8A;
 }
 
-/* Animations */
 @keyframes pulse-gentle {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(0.96); }
+  50% { opacity: 0.88; transform: scale(0.985); }
 }
 
 .animate-pulse-gentle {
   animation: pulse-gentle 2.5s infinite ease-in-out;
 }
 
-/* ==========================================================================
-   SISTEMA DE IMPRESIÓN DESDE EL NAVEGADOR (TICKETS TÉRMICOS DE 80MM)
-   ========================================================================== */
+@keyframes ring-once {
+  0% { box-shadow: 0 0 0 0 rgba(176, 86, 52, 0.5); }
+  60% { box-shadow: 0 0 0 10px rgba(176, 86, 52, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(176, 86, 52, 0); }
+}
 
-/* Ocultar en pantalla el contenedor de impresión */
+.animate-ring-once {
+  animation: ring-once 600ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 220ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-pop-in {
+  animation: pop-in 180ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-ring-once,
+  .animate-pulse-gentle,
+  .animate-fade-in,
+  .animate-pop-in {
+    animation: none !important;
+  }
+}
+
 #print-section {
   display: none;
 }
 
 @media print {
-  /* Ocultar todo el sitio web por completo */
   body * {
     visibility: hidden !important;
   }
-  
-  /* Mostrar única y exclusivamente el contenedor de ticket */
   #print-section, #print-section * {
     visibility: visible !important;
   }
-  
-  /* Posicionar el ticket arriba a la izquierda y dimensionarlo */
   #print-section {
     display: block !important;
     position: absolute !important;
@@ -186,28 +254,23 @@ button:active {
     padding: 3mm 4mm !important;
     background: white !important;
     color: black !important;
-    font-family: "JetBrains Mono", "Courier New", Courier, monospace !important;
+    font-family: var(--font-mono) !important;
     font-size: 11px !important;
     line-height: 1.35 !important;
     box-sizing: border-box !important;
     box-shadow: none !important;
     border: none !important;
   }
-
-  /* Forzar saltos de línea y formateo de tablas limpias */
   .ticket-separator {
     border-top: 1px dashed #000 !important;
     height: 0 !important;
     margin: 8px 0 !important;
     display: block !important;
   }
-
-  /* Reset del layout de impresión del navegador */
   @page {
     size: auto;
     margin: 0mm;
   }
-
   html, body {
     background: white !important;
     color: black !important;

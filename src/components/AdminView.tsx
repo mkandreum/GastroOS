@@ -17,9 +17,12 @@ import { useConfirm } from "./useConfirm";
 import { authHeaders } from "./api";
 import { Table, Category, Product, PrinterConfig, PrintLog, AdminStats, Allergen, TicketTemplate } from "../types";
 import { sendZplDirectToPrinter } from "../utils/directPrint";
+import TableQR from "./TableQR";
+import { useFocusTrap } from "./useFocusTrap";
 
 export default function AdminView() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "tables" | "printer" | "tickets" | "users" | "ticket-tpl">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "tables" | "printer" | "tickets" | "users" | "ticket-tpl" | "audit">("dashboard");
+  const [dateRange, setDateRange] = useState<"today" | "week" | "all">("all");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [tables, setTables] = useState<Table[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -27,6 +30,7 @@ export default function AdminView() {
   const [printer, setPrinter] = useState<PrinterConfig | null>(null);
   const [printLogs, setPrintLogs] = useState<PrintLog[]>([]);
   const [closedReceipts, setClosedReceipts] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   
   // Estados de interacción para los gráficos SVG interactivos
   const [hoveredHourPoint, setHoveredHourPoint] = useState<any | null>(null);
@@ -50,6 +54,8 @@ export default function AdminView() {
   const [prodStock, setProdStock] = useState("");
   const [prodAllergens, setProdAllergens] = useState<Allergen[]>([]);
   const [prodIva, setProdIva] = useState("10");
+  const [prodStation, setProdStation] = useState<"cocina" | "bar">("cocina");
+  const [prodAvailable, setProdAvailable] = useState(true);
 
   // Estados para crear mesas
   const [newTableNumber, setNewTableNumber] = useState("");
@@ -92,16 +98,25 @@ export default function AdminView() {
 
   useEffect(() => {
     fetchGlobalData();
-  }, [activeTab]);
+  }, [activeTab, dateRange]);
 
   const { toast } = useToast();
   const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+  const catTrapRef = useFocusTrap(isCatModalOpen);
+  const prodTrapRef = useFocusTrap(isProdModalOpen);
+  const importTrapRef = useFocusTrap(isImportModalOpen);
 
   const fetchGlobalData = async () => {
     setLoading(true);
+    const from = dateRange === "today"
+      ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+      : dateRange === "week"
+      ? new Date(Date.now() - 7 * 86400000).toISOString()
+      : "";
+    const rangeQuery = from ? `?from=${encodeURIComponent(from)}` : "";
     try {
       const [resStats, resTables, resCats, resProds, resPrint, resTicketPrint, resLogs, resUsers] = await Promise.all([
-        fetch("/api/stats"),
+        fetch(`/api/stats${rangeQuery}`),
         fetch("/api/tables"),
         fetch("/api/categories"),
         fetch("/api/products"),
@@ -138,8 +153,10 @@ export default function AdminView() {
       if (resLogs.ok) setPrintLogs(await resLogs.json());
       if (resUsers.ok) setUsers(await resUsers.json());
       // Cargar historial de tickets cerrados
-      const resClosed = await fetch("/api/closed-receipts");
+      const resClosed = await fetch(`/api/closed-receipts${from ? `?from=${encodeURIComponent(from)}&limit=500` : "?limit=500"}`);
       if (resClosed.ok) setClosedReceipts(await resClosed.json());
+      const resAudit = await fetch("/api/audit-log?limit=200");
+      if (resAudit.ok) setAuditLogs(await resAudit.json());
       // Cargar plantilla de ticket
       const resTpl = await fetch("/api/ticket-template");
       if (resTpl.ok) setTicketTpl(await resTpl.json());
@@ -179,7 +196,11 @@ export default function AdminView() {
         setCatName("");
         setCatDesc("");
         setEditCategoryMode(null);
+        toast("Categoría guardada.", "success");
         fetchGlobalData();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast(error.error || "No se pudo guardar la categoría.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -216,22 +237,9 @@ export default function AdminView() {
       iva: parseInt(prodIva),
       stock: prodStock && prodStock !== "unlimited" ? parseInt(prodStock) : null,
       allergens: prodAllergens,
-      available: editProductMode ? editProductMode.available : true,
-      modifierGroups: editProductMode?.modifierGroups || (
-        prodCatId === "cat-2" ? [ // Si es platos principales/carnes, añadimos el punto por comodidad
-          {
-            id: "modg-1",
-            name: "Punto de la carne",
-            required: true,
-            maxSelections: 1,
-            options: [
-              { id: "modo-1", name: "Poco hecho (Sangrante)", price: 0 },
-              { id: "modo-2", name: "Al punto", price: 0 },
-              { id: "modo-3", name: "Muy hecho", price: 0 }
-            ]
-          }
-        ] : []
-      )
+      available: prodAvailable,
+      station: prodStation,
+      modifierGroups: editProductMode?.modifierGroups || []
     };
 
     const url = editProductMode 
@@ -254,7 +262,13 @@ export default function AdminView() {
         setProdPrice("");
         setProdStock("");
         setProdAllergens([]);
+        setProdAvailable(true);
+        setProdStation("cocina");
+        toast("Plato guardado.", "success");
         fetchGlobalData();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast(error.error || "No se pudo guardar el plato.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -296,7 +310,11 @@ export default function AdminView() {
       if (res.ok) {
         setNewTableNumber("");
         setNewTableName("");
+        toast("Mesa creada.", "success");
         fetchGlobalData();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast(error.error || "No se pudo crear la mesa.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -333,6 +351,9 @@ export default function AdminView() {
       if (res.ok) {
         toast("Configuración actualizada.", "success");
         fetchGlobalData();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast(error.error || "No se pudo guardar la impresora.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -357,6 +378,9 @@ export default function AdminView() {
       if (res.ok) {
         toast("Configuración de tickets actualizada.", "success");
         fetchGlobalData();
+      } else {
+        const error = await res.json().catch(() => ({}));
+        toast(error.error || "No se pudo guardar la impresora de tickets.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -792,6 +816,16 @@ export default function AdminView() {
             </button>
 
             <button
+              onClick={() => setActiveTab("audit")}
+              className={`w-full flex items-center space-x-2.5 p-3 min-h-[44px] rounded-lg transition ${
+                activeTab === "audit" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
+              }`}
+            >
+              <span className="text-base">A</span>
+              <span>Auditoría</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("users")}
               className={`w-full flex items-center space-x-2.5 p-3 min-h-[44px] rounded-lg transition ${
                 activeTab === "users" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
@@ -830,7 +864,21 @@ export default function AdminView() {
         {/* TAB 1: DASHBOARD METRICS */}
         {activeTab === "dashboard" && stats && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800 tracking-tight">Ventas y Métricas Recientes</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-black text-slate-800 tracking-tight">Ventas y métricas</h2>
+              <div className="inline-flex rounded-xl border border-line bg-surface p-1 text-xs font-bold">
+                {([["today", "Hoy"], ["week", "7 días"], ["all", "Todo"]] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDateRange(value)}
+                    className={`rounded-lg px-3 py-1.5 transition ${dateRange === value ? "bg-olive text-white" : "text-ink-muted hover:bg-paper"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Tarjetas KPI */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5" id="stats_cards_grid">
@@ -1281,6 +1329,8 @@ export default function AdminView() {
                     setProdPrice("");
                     setProdStock("");
                     setProdAllergens([]);
+                    setProdAvailable(true);
+                    setProdStation("cocina");
                     if (categories.length > 0) setProdCatId(categories[0].id);
                     setIsProdModalOpen(true);
                   }}
@@ -1371,11 +1421,27 @@ export default function AdminView() {
                                         setProdAllergens(p.allergens);
                                         setProdIva(String(p.iva));
                                         setProdCatId(p.categoryId);
+                                        setProdStation(p.station || "cocina");
+                                        setProdAvailable(p.available);
                                         setIsProdModalOpen(true);
                                       }}
                                       className="p-1.5 min-h-[44px] rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 transition cursor-pointer"
                                     >
                                       Editar
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        await fetch(`/api/products/${p.id}`, {
+                                          method: "PUT",
+                                          headers: { "Content-Type": "application/json", ...authHeaders() },
+                                          body: JSON.stringify({ available: !p.available })
+                                        });
+                                        fetchGlobalData();
+                                      }}
+                                      className={`p-1.5 min-h-[44px] rounded border transition cursor-pointer ${p.available ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-500"}`}
+                                      title={p.available ? "Marcar como agotado" : "Volver a disponible"}
+                                    >
+                                      {p.available ? "Disponible" : "Agotado"}
                                     </button>
                                     <button
                                       onClick={() => handleDeleteProduct(p.id)}
@@ -1633,20 +1699,27 @@ export default function AdminView() {
                             re.stopPropagation();
                             const startX = re.clientX;
                             const startY = re.clientY;
-                            const startW = table.width || 140;
-                            const startH = table.height || 100;
+                            const startW = table.width || 150;
+                            const startH = table.height || 110;
+                            let latestWidth = startW;
+                            let latestHeight = startH;
 
                             const onResizeMove = (rme: MouseEvent) => {
                               const dw = rme.clientX - startX;
                               const dh = rme.clientY - startY;
-                              const newW = Math.max(80, startW + dw);
-                              const newH = Math.max(60, startH + dh);
-                              setTables(prev => prev.map(t => t.id === table.id ? { ...t, width: newW, height: newH } : t));
+                              latestWidth = Math.max(80, startW + dw);
+                              latestHeight = Math.max(60, startH + dh);
+                              setTables(prev => prev.map(t => t.id === table.id ? { ...t, width: latestWidth, height: latestHeight } : t));
                             };
 
                             const onResizeUp = () => {
                               window.removeEventListener("mousemove", onResizeMove);
                               window.removeEventListener("mouseup", onResizeUp);
+                              fetch(`/api/tables/${table.id}/position`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json", ...authHeaders() },
+                                body: JSON.stringify({ posX: table.posX, posY: table.posY, width: latestWidth, height: latestHeight })
+                              }).catch(() => {});
                             };
 
                             window.addEventListener("mousemove", onResizeMove);
@@ -1669,35 +1742,26 @@ export default function AdminView() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" id="tables_qr_cards_list">
                 {tables.map(table => {
-                  const appUrlBase = window.location.origin;
-                  const finalTargetUrl = `${appUrlBase}?mesa=${table.number}`;
-                  const qrEndpoint = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(finalTargetUrl)}`;
+                  const finalTargetUrl = table.qrCodeData || `${window.location.origin}/?mesa=${table.number}&t=${table.qrToken || ""}`;
 
                   return (
-                    <div 
-                      key={table.id} 
+                    <div
+                      key={table.id}
                       className="border border-slate-200 rounded-xl p-3.5 flex items-center justify-between hover:border-slate-300 transition"
                     >
                       <div className="flex-1 pr-3 min-w-0">
                         <span className="text-[10px] font-mono text-slate-500 font-bold uppercase">Mesa</span>
                         <h4 className="font-extrabold text-slate-900 text-sm">{table.name}</h4>
-                        
                         <div className="bg-slate-50 border p-1.5 rounded-lg font-mono text-[10px] text-slate-500 mt-1.5 truncate">
                           {finalTargetUrl}
                         </div>
-
                         <div className="mt-3 flex space-x-2">
                           <button
-                            onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = qrEndpoint;
-                              link.target = "_blank";
-                              link.click();
-                            }}
+                            onClick={() => navigator.clipboard?.writeText(finalTargetUrl)}
                             className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] px-2 py-1.5 min-h-[44px] rounded-md flex items-center space-x-1 cursor-pointer transition border border-indigo-100"
                           >
                             <Eye className="w-3 h-3" />
-                            <span>QR</span>
+                            <span>Copiar enlace</span>
                           </button>
                           <button
                             onClick={() => handleDeleteTable(table.id)}
@@ -1707,14 +1771,8 @@ export default function AdminView() {
                           </button>
                         </div>
                       </div>
-
-                      <div className="w-16 h-16 bg-white border border-slate-150 rounded-lg shrink-0 flex items-center justify-center">
-                        <img 
-                          src={qrEndpoint} 
-                          alt="QR" 
-                          className="w-full h-full"
-                          referrerPolicy="no-referrer"
-                        />
+                      <div className="shrink-0">
+                        <TableQR url={finalTargetUrl} label={table.name} size={72} />
                       </div>
                     </div>
                   );
@@ -2167,6 +2225,43 @@ export default function AdminView() {
           </div>
         )}
 
+        {activeTab === "audit" && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-black text-slate-800">Auditoría</h2>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
+              Registro de accesos, cobros, cambios de ticket, usuarios, catálogo y configuración sensible.
+            </p>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+              <div className="max-h-[600px] overflow-y-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      <th className="pb-2.5">Fecha</th>
+                      <th className="pb-2.5">Actor</th>
+                      <th className="pb-2.5">Acción</th>
+                      <th className="pb-2.5">Entidad</th>
+                      <th className="pb-2.5">Detalle</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {auditLogs.length === 0 ? (
+                      <tr><td colSpan={5} className="py-8 text-center text-slate-500">Sin registros todavía.</td></tr>
+                    ) : auditLogs.map((entry) => (
+                      <tr key={entry.id} className="align-top">
+                        <td className="py-2.5 font-mono text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleString("es-ES")}</td>
+                        <td className="py-2.5 font-semibold">{entry.actorName || entry.actorId || "sistema"}</td>
+                        <td className="py-2.5"><span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px]">{entry.action}</span></td>
+                        <td className="py-2.5 text-slate-500">{entry.entity}{entry.entityId ? ` · ${String(entry.entityId).slice(0, 22)}` : ""}</td>
+                        <td className="py-2.5 max-w-[320px] truncate font-mono text-[10px] text-slate-500" title={entry.details}>{entry.details}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === "users" && (
           <div className="space-y-6">
             <h2 className="text-lg font-black text-slate-800">Gestión de Personal / Usuarios</h2>
@@ -2309,6 +2404,7 @@ export default function AdminView() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
+              ref={catTrapRef}
               className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl relative"
             >
               <h3 className="font-extrabold text-slate-900 text-sm mb-4" id="cat-modal-title">
@@ -2370,6 +2466,7 @@ export default function AdminView() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
+              ref={prodTrapRef}
               className="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto"
             >
               <h3 className="font-extrabold text-slate-900 text-sm mb-4" id="prod-modal-title">
@@ -2447,6 +2544,31 @@ export default function AdminView() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Estación de preparación</label>
+                    <select
+                      value={prodStation}
+                      onChange={(e) => setProdStation(e.target.value as "cocina" | "bar")}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-indigo-400 focus:bg-white"
+                    >
+                      <option value="cocina">Cocina</option>
+                      <option value="bar">Barra</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Disponibilidad</label>
+                    <select
+                      value={prodAvailable ? "1" : "0"}
+                      onChange={(e) => setProdAvailable(e.target.value === "1")}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-indigo-400 focus:bg-white"
+                    >
+                      <option value="1">Disponible</option>
+                      <option value="0">Agotado / oculto</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Visual Receta / Ingredientes</label>
                   <textarea
@@ -2513,6 +2635,7 @@ export default function AdminView() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
+              ref={importTrapRef}
               className="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto"
             >
               <h3 className="font-extrabold text-slate-900 text-sm mb-2" id="import-modal-title">
@@ -2594,6 +2717,7 @@ export default function AdminView() {
                       setIsImportModalOpen(false);
                       setImportItems([]);
                     }}
+                    data-close-modal
                     className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-lg text-center cursor-pointer"
                   >
                     Cancelar

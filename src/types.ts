@@ -12,6 +12,7 @@ export interface User {
   role: UserRole;
   name: string;
   passwordHash?: string;
+  tokenVersion?: number;
 }
 
 // Estados posibles de una mesa
@@ -32,6 +33,9 @@ export interface Table {
   height?: number; // Alto en píxeles para el editor de diseño
   assignedWaiterId?: string | null; // ID del camarero que ha tomado la mesa
   assignedWaiterName?: string | null; // Nombre del camarero asignado
+  sessionStartedAt?: string | null;
+  zone?: string | null;
+  qrToken?: string;
 }
 
 // Concepto de categoría gastronómica
@@ -86,6 +90,7 @@ export interface Product {
   available: boolean;
   stock: number | null; // null representa stock ilimitado
   modifierGroups?: ModifierGroup[];
+  station?: "cocina" | "bar";
 }
 
 // Estados del pedido
@@ -108,6 +113,8 @@ export interface OrderLine {
   notes: string;
   selectedExtras: SelectedModifier[];
   destination: "cocina" | "bar"; // Determina dónde se envía
+  taxRate?: number;
+  stationStatus?: OrderStatus;
 }
 
 // Pedido registrado
@@ -120,6 +127,8 @@ export interface Order {
   status: OrderStatus;
   items: OrderLine[];
   totalAmount: number;
+  openedAt?: string;
+  closedAt?: string | null;
 }
 
 // Ticket/Cuenta por mesa
@@ -140,8 +149,12 @@ export interface Receipt {
   openedAt: string;
   items: ReceiptLine[];
   subtotal: number;
-  taxAmount: number; // IVA acumulado
+  taxAmount: number; // IVA incluido en el total
   total: number;
+  taxBreakdown?: Record<string, number>;
+  invoiceNumber?: number | null;
+  paymentMethod?: string;
+  closedBy?: string | null;
 }
 
 // Modo de impresión: servidor (Express TCP) o navegador (fetch directo a IP)
