@@ -631,7 +631,7 @@ export default function CamareroView() {
   const mapHeight = Math.max(450, ...tables.map((table) => (table.posY || 0) + (table.height || 110) + 80));
 
   return (
-    <div className="min-h-screen bg-paper p-3 md:p-4 pb-24 font-sans" id="camarero_root">
+    <div className="min-h-screen p-3 md:p-4 pb-24 font-sans" id="camarero_root">
       
       {/* Push Banner */}
       {pushBanner && (

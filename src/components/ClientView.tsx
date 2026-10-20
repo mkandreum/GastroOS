@@ -502,7 +502,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
   }, [cart]);
 
   return (
-    <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans pb-24 sm:pb-4 ${cart.length > 0 ? 'pb-36 sm:pb-20' : ''}`} id="client_root">
+    <div className={`flex flex-col min-h-screen text-slate-900 font-sans pb-24 sm:pb-4 ${cart.length > 0 ? 'pb-36 sm:pb-20' : ''}`} id="client_root">
       
 
 

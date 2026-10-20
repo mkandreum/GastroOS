@@ -58,19 +58,19 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
   };
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 bg-transparent font-sans" id="auth_view_box">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-transparent font-sans" id="auth_view_box">
       
       {/* CARD ACCESO */}
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm bg-white rounded-xl border border-slate-200/80 p-6 shadow-sm gastro-card"
+        className="w-full max-w-sm glass-panel rounded-[28px] p-7 shadow-2xl shadow-indigo-900/10"
       >
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/30">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-black text-slate-800 tracking-tight">Acceso de Personal Autorizado</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Bienvenido de nuevo</h2>
           <p className="text-xs text-slate-500 mt-1 uppercase font-bold tracking-widest bg-slate-50 inline-block px-2.5 py-1 rounded">
             Introduce tus credenciales
           </p>
@@ -134,7 +134,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-300 text-white font-extrabold py-3.5 px-4 rounded-xl flex justify-center items-center space-x-1.5 cursor-pointer shadow-md transition active:scale-98"
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-500 hover:brightness-110 disabled:opacity-50 text-white font-extrabold py-3.5 px-4 rounded-2xl flex justify-center items-center space-x-1.5 cursor-pointer shadow-md transition active:scale-98"
             id="auth_btn_submit"
           >
             {loading ? (
@@ -143,7 +143,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
                 <span>Validando credenciales...</span>
               </>
             ) : (
-              <span>Iniciar Sesión Segura</span>
+              <span>Entrar</span>
             )}
           </button>
         </form>

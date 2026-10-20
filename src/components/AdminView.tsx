@@ -723,13 +723,13 @@ export default function AdminView() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col md:flex-row pb-12" id="admin_root">
+    <div className="min-h-screen font-sans flex flex-col md:flex-row pb-12" id="admin_root">
       
       {/* SIDEBAR NAVIGATION ADMIN */}
       {/* Hamburger toggle for mobile */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 md:hidden bg-slate-900 text-white p-2.5 rounded-lg shadow-lg"
+        className="fixed top-4 right-4 z-50 md:hidden bg-slate-900 text-white p-3 rounded-2xl shadow-xl"
         aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -745,7 +745,7 @@ export default function AdminView() {
         <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`fixed md:relative z-50 inset-y-0 left-0 w-72 md:w-64 shrink-0 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 transform transition-transform duration-200 ${
+      <aside className={`fixed md:sticky md:top-3 md:m-3 md:h-[calc(100vh-24px)] md:rounded-3xl md:overflow-y-auto z-50 inset-y-0 left-0 w-72 md:w-60 shrink-0 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 md:border md:shadow-2xl transform transition-transform duration-200 ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}>
         <div className="p-5">
@@ -837,19 +837,6 @@ export default function AdminView() {
           </nav>
         </div>
 
-        {/* Acceso rápido a credenciales */}
-        <div className="p-4 bg-slate-950/60 m-4 rounded-xl text-[11px] border border-slate-850">
-          <h4 className="font-extrabold text-white mb-1.5 uppercase flex items-center space-x-1">
-            <Shield className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Usuarios de Demostración</span>
-          </h4>
-          <span className="block text-slate-500">Prueba loguearte con:</span>
-          <div className="space-y-1 mt-1 font-mono">
-            <p className="text-slate-500">Camarero: <span className="text-amber-300 font-bold">camarero1</span> / camarero123</p>
-            <p className="text-slate-500">Cocina: <span className="text-rose-300 font-bold">cocina1</span> / cocina123</p>
-            <p className="text-slate-500">Barra: <span className="text-sky-300 font-bold">bar1</span> / bar123</p>
-          </div>
-        </div>
       </aside>
 
       {/* RECEPTÁCULO CONTENIDO DE PANTALLA */}

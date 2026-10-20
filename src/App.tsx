@@ -5,7 +5,7 @@
 
 import React, { lazy, Suspense, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
-import { Settings, LogOut, Utensils, ClipboardList, ChefHat, GlassWater } from "lucide-react";
+import { Settings, LogOut, LogIn, Utensils, ClipboardList, ChefHat, GlassWater } from "lucide-react";
 
 import { UserRole, User } from "./types";
 import { ToastProvider } from "./components/ToastProvider";
@@ -32,6 +32,7 @@ function RoleFallback() {
 
 export default function App() {
   const [appType, setAppType] = useState<string>("both"); // "client", "internal", "both"
+  const [configLoaded, setConfigLoaded] = useState(false);
   // Roles de usuario y sesión
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function App() {
     fetch("/api/app-config")
       .then(res => res.json())
       .then(data => {
+        setConfigLoaded(true);
         if (data.appType) {
           setAppType(data.appType);
           const hasSavedUser = !!localStorage.getItem("auth_user");
@@ -104,6 +106,7 @@ export default function App() {
       })
       .catch(err => {
         console.error("Error al obtener la configuración de la app:", err);
+        setConfigLoaded(true);
         setSelectedSimTable(prev => prev === null ? 1 : prev);
       });
 
@@ -263,121 +266,60 @@ export default function App() {
     return currentUser.role === role;
   };
 
+  const showNav = configLoaded && !isKioskMode && appType !== "client";
+  const isAdmin = currentUser?.role === "admin";
+  const navItems: { role: UserRole; label: string; Icon: React.ComponentType<{ className?: string }> }[] = (
+    [
+      ...(isAdmin && appType !== "internal" ? [{ role: "cliente" as UserRole, label: "Cliente", Icon: Utensils }] : []),
+      ...(isAdmin || currentUser?.role === "camarero" ? [{ role: "camarero" as UserRole, label: "Sala", Icon: ClipboardList }] : []),
+      ...(isAdmin || currentUser?.role === "cocina" ? [{ role: "cocina" as UserRole, label: "Cocina", Icon: ChefHat }] : []),
+      ...(isAdmin || currentUser?.role === "bar" ? [{ role: "bar" as UserRole, label: "Barra", Icon: GlassWater }] : []),
+      ...(isAdmin ? [{ role: "admin" as UserRole, label: "Admin", Icon: Settings }] : []),
+    ]
+  );
+
   return (
     <MotionConfig reducedMotion="user">
     <ToastProvider>
     <ErrorBoundary>
-    <div className="min-h-screen bg-paper grid-bg flex flex-col text-ink selection:bg-olive selection:text-white" id="unified_master_app">
+    <div className={`min-h-screen grid-bg flex flex-col text-ink selection:bg-olive selection:text-white ${showNav ? "app-shell" : ""}`} id="unified_master_app">
       
-      {/* HEADER ACTORES / SIMULADOR GENERAL (Oculto en Kiosk QR real del comensal o si appType es client) */}
-      {!isKioskMode && appType !== "client" && (
-        <header className="h-auto md:h-16 bg-white border-b border-slate-250 flex flex-col md:flex-row items-center justify-between px-6 py-3 md:py-0 shrink-0 gap-4" id="sim_navigation_header">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center shrink-0">
-              <div className="w-4 h-4 border-2 border-white rotate-45"></div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-base tracking-tight text-slate-900">GASTRO-OS</h1>
-                <span className="text-slate-400 font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-black">v1.1.0</span>
-              </div>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Sistema de Gestión de Hostelería</p>
-            </div>
-          </div>
-
-          {/* Selección de Terminal */}
-          {(currentUser && currentUser.role === "admin") && (
-            <div className="flex flex-wrap justify-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-xs" id="role_navigator_capsules">
-              {appType !== "internal" && (
-                <button
-                  onClick={() => setSelectedRole("cliente")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-150 cursor-pointer snap-start whitespace-nowrap ${
-                    selectedRole === "cliente" ? "bg-slate-900 text-white" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
-                  }`}
-                >
-                  Cliente
-                </button>
-              )}
-
-              <button
-                onClick={() => setSelectedRole("camarero")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-150 cursor-pointer snap-start whitespace-nowrap ${
-                  selectedRole === "camarero" ? "bg-amber-150 text-amber-805 border border-amber-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
-                }`}
-              >
-                Camarero
-              </button>
-
-              <button
-                onClick={() => setSelectedRole("cocina")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-150 cursor-pointer snap-start whitespace-nowrap ${
-                  selectedRole === "cocina" ? "bg-red-100 text-red-700 border border-red-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
-                }`}
-              >
-                Cocina
-              </button>
-
-              <button
-                onClick={() => setSelectedRole("bar")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-150 cursor-pointer snap-start whitespace-nowrap ${
-                  selectedRole === "bar" ? "bg-sky-100 text-sky-850 border border-sky-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
-                }`}
-              >
-                Barra
-              </button>
-
-              <button
-                onClick={() => setSelectedRole("admin")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-150 cursor-pointer snap-start whitespace-nowrap ${
-                  selectedRole === "admin" ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "text-slate-655 hover:text-slate-900 hover:bg-slate-205/50"
-                }`}
-              >
-                Admin
-              </button>
-            </div>
+      {/* BARRA DE NAVEGACIÓN FLOTANTE (lateral en escritorio, dock inferior en móvil) */}
+      {showNav && (
+        <nav className="float-nav" aria-label="Navegación principal" id="floating_nav">
+          <div className="nav-brand" title="GastroOS">G</div>
+          <div className="nav-sep" />
+          {navItems.map(({ role, label, Icon }) => (
+            <button
+              key={role}
+              onClick={() => setSelectedRole(role)}
+              aria-current={selectedRole === role ? "page" : undefined}
+              className="nav-item"
+              title={label}
+            >
+              <Icon className="w-5 h-5" />
+              <span>{label}</span>
+            </button>
+          ))}
+          <div className="nav-sep" />
+          {currentUser ? (
+            <button onClick={handleLogout} className="nav-item" title={`Cerrar sesión (${currentUser.name})`}>
+              <span className="nav-dot" />
+              <LogOut className="w-5 h-5" />
+              <span>Salir</span>
+            </button>
+          ) : (
+            <button onClick={() => setSelectedRole("admin")} className="nav-item" title="Acceso personal" aria-current={selectedRole === "admin" ? "page" : undefined}>
+              <LogIn className="w-5 h-5" />
+              <span>Acceso</span>
+            </button>
           )}
-
-          <div className="flex items-center gap-4 text-[11px] font-semibold text-slate-650 shrink-0">
-            <div className="hidden lg:flex items-center gap-2 font-mono text-ink-muted">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              SERVIDOR CONECTADO
-            </div>
-            
-            {/* Estado de login activo */}
-            {currentUser ? (
-              <div className="flex items-center space-x-2 bg-slate-900 text-white px-3 py-1.5 rounded-lg border border-slate-800 text-xs shadow-xs font-mono font-bold">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                <span className="truncate max-w-[100px]">{currentUser.role.toUpperCase()}: {currentUser.name.toUpperCase()}</span>
-                <button 
-                  onClick={handleLogout}
-                  className="text-slate-400 hover:text-red-400 cursor-pointer shrink-0 transition"
-                  title="Cerrar sesión"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 font-mono text-[10px] hidden sm:block">
-                  SERVIDOR OK
-                </div>
-                {appType !== "client" && (
-                  <button
-                    onClick={() => setSelectedRole("admin")}
-                    className="bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-lg shadow-xs flex items-center gap-1 cursor-pointer"
-                  >
-                    Acceso personal
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
+        </nav>
       )}
 
       {/* SUB-HEADER ACCESOS RAPIDOS MESA CLIENTE (Oculto en Kiosk QR real o en producción) */}
       {!isKioskMode && selectedRole === "cliente" && appType === "both" && (
-        <section className="bg-slate-900 text-slate-400 px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 tracking-tight shrink-0 gap-2">
+        <section className="glass-panel mx-3 mt-3 rounded-2xl text-slate-600 px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 tracking-tight shrink-0 gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-amber-400 font-bold shrink-0">Simulador QR</span>
             <span className="text-slate-300">Mesa virtual activa:</span>
@@ -394,7 +336,7 @@ export default function App() {
                 window.history.pushState({}, "", url.toString());
                 setTableToken(null);
               }}
-              className="bg-slate-850 text-white font-black border border-slate-700 rounded px-2.5 py-0.5 cursor-pointer focus:outline-none"
+              className="bg-white text-slate-900 font-black border border-slate-200 rounded px-2.5 py-0.5 cursor-pointer focus:outline-none"
               id="simulated_table_picker"
             >
               {Array.from({ length: 8 }, (_, i) => (
