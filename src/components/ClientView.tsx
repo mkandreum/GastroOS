@@ -502,17 +502,17 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
   }, [cart]);
 
   return (
-    <div className={`flex flex-col min-h-screen text-slate-900 font-sans pb-24 sm:pb-4 ${cart.length > 0 ? 'pb-36 sm:pb-20' : ''}`} id="client_root">
+    <div className={`client-dark flex flex-col min-h-screen font-sans pb-24 sm:pb-4 ${cart.length > 0 ? 'pb-36 sm:pb-20' : ''}`} id="client_root">
       
 
 
       {/* HEADER CLIENTE */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-2.5 flex justify-between items-center shadow-xs">
+      <header className="sticky top-0 z-30 bg-[#0B0C10]/80 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex justify-between items-center">
         <div className="min-w-0 flex-1 pr-2">
-          <span className="text-[10px] font-mono text-indigo-600 font-bold tracking-wider block uppercase">
+          <span className="text-[10px] font-mono text-amber-400 font-bold tracking-[0.2em] block uppercase">
             {tableNumber ? "Pedidos Mesa QR" : "Carta Online"}
           </span>
-          <h1 className="text-base sm:text-lg font-extrabold text-slate-800 tracking-tight flex items-center truncate">
+          <h1 className="font-display text-2xl sm:text-3xl uppercase text-white tracking-wide flex items-center truncate">
             📍 {tableInfo ? tableInfo.name : tableNumber ? `Mesa ${tableNumber}` : "Carta Digital (Consulta)"}
           </h1>
         </div>
@@ -521,7 +521,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             <button 
               type="button"
               onClick={() => setIsCallWaiterModalOpen(true)}
-              className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 border border-amber-500 hover:border-amber-650 text-slate-950 font-bold rounded-xl transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] space-x-1 shadow-sm"
+              className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 border border-amber-400 text-black font-bold rounded-full transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] space-x-1 shadow-sm"
               title="Llamar al Camarero"
             >
               <span>🛎️</span>
@@ -532,7 +532,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           <button 
             type="button"
             onClick={() => setIsScannerOpen(true)}
-            className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-700 hover:text-indigo-600 rounded-xl transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] min-w-[38px]"
+            className="p-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-full transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] min-w-[38px]"
             title="Escanear QR de Mesa"
           >
             <QrCode className="w-5 h-5" />
@@ -543,7 +543,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             type="button"
             onClick={() => setActiveTab("menu")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition min-h-[38px] ${
-              activeTab === "menu" ? "bg-slate-950 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-650"
+              activeTab === "menu" ? "bg-amber-400 text-black" : "bg-white/10 hover:bg-white/20 text-white"
             }`}
             id="tab_client_menu"
           >
@@ -557,7 +557,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               fetchMyOrders();
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold relative transition min-h-[38px] ${
-              activeTab === "orders" ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+              activeTab === "orders" ? "bg-amber-400 text-black" : "bg-white/10 text-white hover:bg-white/20"
             }`}
             id="tab_client_orders"
           >
@@ -576,7 +576,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       {activeTab === "menu" && (
         <div className="flex-1 flex flex-col">
           {/* BUSCADOR FUZZY */}
-          <div className="bg-white px-4 pt-3 pb-1.5 border-b border-slate-100 sticky top-[61px] z-20">
+          <div className="bg-[#0B0C10] px-4 pt-3 pb-1.5 sticky top-[61px] z-20">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs">🔍</span>
               <input
@@ -584,7 +584,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                 placeholder="Busca platos... (ej. hamburguesa, tarta, patatas)"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-8 pr-8 py-2 text-xs text-slate-800 outline-none focus:border-indigo-400 focus:bg-white transition"
+                className="w-full bg-white/10 border border-white/10 rounded-full pl-9 pr-8 py-2.5 text-xs text-white placeholder:text-white/40 outline-none transition"
               />
               {searchQuery && (
                 <button
@@ -598,9 +598,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           </div>
 
           {/* CATEGORÍAS CIRCULARES */}
-          <section className="bg-white py-3 border-b border-slate-200 sticky top-[110px] z-20 relative">
-            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+          <section className="bg-[#0B0C10] py-2 border-b border-white/10 sticky top-[110px] z-20 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[#0B0C10] to-transparent pointer-events-none z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[#0B0C10] to-transparent pointer-events-none z-10" />
 
             <div className="flex space-x-4 overflow-x-auto px-6 py-1.5 scrollbar-none snap-x">
               {categories.map(cat => {
@@ -617,15 +617,15 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                     id={`btn_cat_${cat.id}`}
                     aria-label={`Categoría ${cat.name}`}
                   >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 ${
                       isActive 
-                        ? "bg-indigo-600 text-white shadow-md ring-4 ring-indigo-100 scale-105" 
-                        : "bg-slate-50 border border-slate-200 text-slate-500 hover:border-slate-350"
+                        ? "bg-amber-400 text-black shadow-[0_0_30px_-4px_rgba(251,191,36,0.7)] scale-105" 
+                        : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/20"
                     }`}>
                       {getCategoryIcon(cat.icon, cat.name)}
                     </div>
                     <span className={`text-[10px] font-black uppercase tracking-wider text-center ${
-                      isActive ? "text-indigo-600 font-extrabold" : "text-slate-500 font-bold"
+                      isActive ? "text-amber-400 font-extrabold" : "text-white/50 font-bold"
                     }`}>
                       {cat.name}
                     </span>
@@ -675,7 +675,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="p-3.5 sm:p-4 max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 content-start"
+            className="p-3.5 sm:p-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 content-start"
           >
             {menuLoading ? (
               <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-semibold text-ink-muted">
@@ -693,44 +693,41 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                 <motion.div
                   variants={itemVariants}
                   key={p.id}
-                  className={`rounded-xl border-2 p-3 flex gap-3 shadow-xs transition-all duration-300 ${
-                    inCartQty > 0 
-                      ? "bg-indigo-50/50 border-indigo-400 shadow-indigo-100" 
-                      : "bg-white border-slate-100 hover:border-slate-200"
+                  className={`group relative overflow-hidden rounded-[28px] flex flex-col transition-all duration-300 ${
+                    inCartQty > 0
+                      ? "bg-[#17130A] ring-2 ring-amber-400 shadow-[0_0_40px_-10px_rgba(251,191,36,0.55)]"
+                      : "bg-[#15161C] ring-1 ring-white/10 hover:ring-amber-400/50"
                   }`}
                   id={`product_card_${p.id}`}
                 >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-50 to-slate-100 border border-indigo-100 text-indigo-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-base sm:text-lg pointer-events-none relative overflow-hidden [&>svg]:w-7 [&>svg]:h-7">
+                  <div className="relative aspect-[4/3] bg-gradient-to-br from-amber-400/20 via-[#1c1d26] to-[#0B0C10] flex items-center justify-center text-amber-300 overflow-hidden [&>svg]:w-14 [&>svg]:h-14 [&>svg]:opacity-80">
                     {p.image && p.image !== "default.jpg" ? (
-                      <img src={p.image} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                      <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                     ) : (
                       getCategoryIcon(categories.find((category) => category.id === p.categoryId)?.icon, p.name)
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#15161C] via-transparent to-transparent" />
+                    <span className="absolute bottom-2 left-3 font-display text-3xl sm:text-4xl text-amber-400 leading-none drop-shadow">
+                      {p.price.toFixed(2)}<span className="text-lg">€</span>
+                    </span>
                     {inCartQty > 0 && (
-                      <span className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">{inCartQty}</span>
+                      <span className="absolute top-3 right-3 min-w-7 h-7 px-2 bg-amber-400 text-black text-xs font-black rounded-full flex items-center justify-center">{inCartQty}</span>
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 pt-1">
                     <div>
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-sm text-slate-900 truncate">{p.name}</h3>
-                        <span className="font-extrabold text-sm text-slate-900 shrink-0 ml-1">
-                          {p.price.toFixed(2)}€
-                        </span>
-                      </div>
-                      
-                      <p className="text-slate-500 text-xs line-clamp-2 mt-1 leading-relaxed">
+                      <h3 className="font-display text-xl sm:text-2xl uppercase leading-[1.05] text-white">{p.name}</h3>
+                      <p className="text-white/50 text-xs line-clamp-2 mt-1.5 leading-relaxed">
                         {p.description}
                       </p>
 
-                      {/* Alérgenos */}
                       {p.allergens && p.allergens.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {p.allergens.map(al => (
-                            <span 
-                              key={al} 
-                              className="inline-flex items-center text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium"
+                            <span
+                              key={al}
+                              className="inline-flex items-center text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 font-medium"
                               title={al}
                             >
                               {getAllergenEmoji(al)} {al}
@@ -740,39 +737,34 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-50 gap-2">
+                    <div className="flex justify-between items-center mt-3 gap-2">
                       <span className="text-[10px] truncate min-w-0">
                         {p.stock !== null ? (
                           p.stock <= 5 ? (
-                            <span className="text-red-500 font-bold">¡Sólo {p.stock}!</span>
+                            <span className="text-red-400 font-bold">¡Sólo {p.stock}!</span>
                           ) : (
-                            <span className="text-slate-500">Quedan {p.stock}</span>
+                            <span className="text-white/40">Quedan {p.stock}</span>
                           )
                         ) : (
-                          <span className="text-emerald-700 font-semibold">Disponible</span>
+                          <span className="text-emerald-400 font-semibold">Disponible</span>
                         )}
                       </span>
 
                       <motion.button
-                        whileTap={{ scale: 0.96 }}
+                        whileTap={{ scale: 0.94 }}
                         onClick={(e) => {
                           triggerFlyParticle(e);
                           handleAddToCart(p);
                         }}
-                        className={`font-bold text-[11px] sm:text-xs px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition flex items-center space-x-1 cursor-pointer shrink-0 ${
-                          inCartQty > 0 
-                            ? "bg-indigo-600 text-white hover:bg-indigo-700" 
-                            : "bg-slate-950 text-white hover:bg-indigo-600"
-                        }`}
+                        className="bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] sm:text-xs uppercase tracking-wide px-4 py-2.5 rounded-full transition flex items-center gap-1 cursor-pointer shrink-0"
                         id={`btn_add_${p.id}`}
                       >
-                        <span>Añadir</span>
+                        <span>{inCartQty > 0 ? "Otro +" : "Pedir"}</span>
                         {p.modifierGroups && p.modifierGroups.length > 0 && (
-                          <span className="text-[9px] text-indigo-300 font-medium">+</span>
+                          <span className="text-[9px] font-black">+</span>
                         )}
                       </motion.button>
                     </div>
-
                   </div>
                 </motion.div>
               );})
@@ -1227,7 +1219,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           type="button"
           onClick={() => setActiveTab("menu")}
           className={`flex flex-col items-center justify-center space-y-0.5 text-xs font-bold transition-all relative ${
-            activeTab === "menu" ? "text-indigo-400 scale-105" : "text-slate-400 hover:text-slate-200"
+            activeTab === "menu" ? "text-amber-400 scale-105" : "text-slate-400 hover:text-slate-200"
           }`}
           id="mobile_tab_client_menu"
         >
@@ -1243,7 +1235,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             fetchMyOrders();
           }}
           className={`flex flex-col items-center justify-center space-y-0.5 text-xs font-bold transition-all relative ${
-            activeTab === "orders" ? "text-indigo-400 scale-105" : "text-slate-400 hover:text-slate-200"
+            activeTab === "orders" ? "text-amber-400 scale-105" : "text-slate-400 hover:text-slate-200"
           }`}
           id="mobile_tab_client_orders"
         >
