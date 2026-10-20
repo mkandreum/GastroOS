@@ -366,3 +366,18 @@ button:active {
 .brutal-btn { background: #FFD400; color: #000; border: 3px solid #000; border-radius: 4px; box-shadow: 4px 4px 0 #fff; font-family: var(--font-condensed); text-transform: uppercase; letter-spacing: .04em; }
 .brutal-btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 #fff; }
 @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
+
+/* ---------- Paneles internos (sala, cocina, barra, admin): brutalismo ---------- */
+.brutal-internal .border, .brutal-internal .border-2 { border-width: 2px; }
+.brutal-internal .border-slate-50, .brutal-internal .border-slate-100, .brutal-internal .border-slate-200,
+.brutal-internal .border-line, .brutal-internal .border-slate-200\/80 { border-color: #0E1020; }
+.brutal-internal .shadow-xs, .brutal-internal .shadow-sm, .brutal-internal .shadow-md { box-shadow: 4px 4px 0 #0E1020; }
+.brutal-internal .shadow-lg, .brutal-internal .shadow-xl, .brutal-internal .shadow-2xl { box-shadow: 6px 6px 0 #0E1020; }
+.brutal-internal .rounded-xl, .brutal-internal .rounded-2xl, .brutal-internal .rounded-3xl { border-radius: 10px; }
+.brutal-internal h1, .brutal-internal h2, .brutal-internal h3 { font-family: var(--font-condensed); font-weight: 400; text-transform: uppercase; letter-spacing: .01em; }
+.brutal-internal h2 { font-size: 1.9rem; line-height: 1; }
+.brutal-internal button:active { transform: translate(2px, 2px); }
+.brutal-internal .bg-indigo-600, .brutal-internal .bg-indigo-500 { background: #FFD400; color: #0E1020; }
+.brutal-internal .text-indigo-600, .brutal-internal .text-indigo-500 { color: #0E1020; }
+.brutal-internal aside .bg-slate-800 { background: #FFD400; color: #0E1020; }
+.brutal-internal .bg-slate-900, .brutal-internal .bg-slate-950 { background: #0A0A0A; }

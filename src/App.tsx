@@ -282,7 +282,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <ToastProvider>
     <ErrorBoundary>
-    <div className={`min-h-screen grid-bg flex flex-col text-ink selection:bg-olive selection:text-white ${showNav ? "app-shell" : ""}`} id="unified_master_app">
+    <div className={`min-h-screen grid-bg flex flex-col text-ink selection:bg-olive selection:text-white ${showNav ? "app-shell" : ""} ${selectedRole !== "cliente" ? "brutal-internal" : ""}`} id="unified_master_app">
       
       {/* BARRA DE NAVEGACIÓN FLOTANTE (lateral en escritorio, dock inferior en móvil) */}
       {showNav && (
