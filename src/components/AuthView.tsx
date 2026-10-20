@@ -64,10 +64,10 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm glass-panel rounded-[28px] p-7 shadow-2xl shadow-indigo-900/10"
+        className="w-full max-w-sm glass-panel rounded-2xl p-7"
       >
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/30">
+          <div className="w-14 h-14 bg-[#FFD400] text-black border-[3px] border-black rounded-xl flex items-center justify-center mx-auto mb-4">
             <Lock className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Bienvenido de nuevo</h2>
@@ -134,7 +134,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-indigo-600 to-violet-500 hover:brightness-110 disabled:opacity-50 text-white font-extrabold py-3.5 px-4 rounded-2xl flex justify-center items-center space-x-1.5 cursor-pointer shadow-md transition active:scale-98"
+            className="w-full bg-[#FFD400] text-black border-[3px] border-black shadow-[4px_4px_0_#000] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50 font-black uppercase tracking-wide py-3.5 px-4 rounded-xl flex justify-center items-center space-x-1.5 cursor-pointer shadow-md transition active:scale-98"
             id="auth_btn_submit"
           >
             {loading ? (

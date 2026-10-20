@@ -12,7 +12,7 @@
   --color-ink: #0E1020;
   --color-ink-muted: #666B80;
   --color-line: #E3E5EE;
-  --color-olive: #5B4BFF;
+  --color-olive: #0E1020;
   --color-terracotta: #FF5A4E;
   --color-brass: #F5A524;
   --color-wine: #8B2A5E;
@@ -90,33 +90,28 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .grid-bg {
-  background:
-    radial-gradient(900px 500px at 8% -10%, rgba(91, 75, 255, 0.16), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%, rgba(45, 212, 191, 0.14), transparent 60%),
-    radial-gradient(700px 500px at 60% 110%, rgba(255, 90, 78, 0.10), transparent 60%),
-    var(--color-paper);
-  background-attachment: fixed;
+  background: var(--color-paper);
+  background-image: linear-gradient(rgba(14,16,32,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(14,16,32,.06) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .gastro-card {
   background: var(--color-surface);
-  border-radius: 22px;
-  border: 1px solid var(--color-line);
-  box-shadow: 0 1px 2px rgba(14, 16, 32, 0.04), 0 12px 32px -18px rgba(14, 16, 32, 0.22);
-  transition: border-color 160ms ease, box-shadow 200ms ease, transform 200ms ease;
+  border-radius: 20px;
+  border: 2.5px solid var(--color-ink);
+  box-shadow: 6px 6px 0 var(--color-ink);
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 .gastro-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(14, 16, 32, 0.05), 0 24px 48px -22px rgba(91, 75, 255, 0.35);
-  border-color: rgba(91, 75, 255, 0.35);
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--color-ink);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(22px) saturate(1.6);
-  -webkit-backdrop-filter: blur(22px) saturate(1.6);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: #FFFFFF;
+  border: 2.5px solid var(--color-ink);
+  box-shadow: 6px 6px 0 var(--color-ink);
 }
 
 /* ---------- Shell: barra flotante ---------- */
@@ -133,11 +128,9 @@ h1, h2, h3, h4, h5, h6 {
   gap: 6px;
   padding: 8px;
   border-radius: 26px;
-  background: rgba(14, 16, 32, 0.82);
-  backdrop-filter: blur(22px) saturate(1.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px -12px rgba(14, 16, 32, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: #0E1020;
+  border: 2.5px solid #0E1020;
+  box-shadow: 5px 5px 0 #FFD400;
   /* móvil: dock inferior */
   left: 50%;
   bottom: max(14px, env(safe-area-inset-bottom));
@@ -179,16 +172,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 .nav-item:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
 .nav-item[aria-current="page"] {
-  color: #fff;
-  background: linear-gradient(135deg, #6B5BFF, #8E5BFF);
-  box-shadow: 0 8px 22px -6px rgba(107, 91, 255, 0.8);
+  color: #0E1020;
+  background: #FFD400;
 }
 .nav-sep { width: 1px; height: 28px; background: rgba(255,255,255,.12); flex-shrink: 0; }
 @media (min-width: 900px) { .nav-sep { width: 28px; height: 1px; } }
 .nav-brand {
   width: 44px; height: 44px; border-radius: 15px; flex-shrink: 0;
   display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-size: 18px; font-weight: 800;
-  background: linear-gradient(135deg, #2DD4BF, #5B4BFF);
+  background: #FFD400; color: #0E1020 !important;
 }
 @media (max-width: 899px) { .nav-brand { display: none; } }
 .nav-dot { position: absolute; top: 8px; right: 12px; width: 7px; height: 7px; border-radius: 99px; background: #2DD4BF; box-shadow: 0 0 0 3px rgba(45,212,191,.25); }
@@ -356,12 +348,21 @@ button:active {
   }
 }
 
-/* ---------- Carta de cliente: modo oscuro rompedor ---------- */
+/* ---------- Carta de cliente: brutalista de alto impacto ---------- */
 .client-dark {
-  background:
-    radial-gradient(700px 400px at 90% -5%, rgba(251, 191, 36, 0.16), transparent 60%),
-    radial-gradient(600px 400px at -10% 40%, rgba(255, 90, 78, 0.10), transparent 60%),
-    #0B0C10;
+  background: #0A0A0A;
+  background-image: radial-gradient(rgba(255,212,0,.13) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
   color: #fff;
 }
 .client-dark .font-display { font-family: var(--font-condensed); font-weight: 400; letter-spacing: 0.01em; }
+.hero-title { font-family: var(--font-condensed); text-transform: uppercase; line-height: .98; letter-spacing: -0.01em; font-size: clamp(76px, 22vw, 190px); color: #FFD400; text-shadow: 5px 5px 0 #fff; }
+.marquee { overflow: hidden; background: #FFD400; color: #000; border-block: 3px solid #000; transform: rotate(-1.2deg); margin-inline: -8px; }
+.marquee-track { display: flex; width: max-content; gap: 32px; padding: 8px 0; font-family: var(--font-condensed); font-size: 22px; text-transform: uppercase; animation: marquee 22s linear infinite; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+.brutal-card { background: #151515; border: 3px solid #fff; border-radius: 6px; box-shadow: 7px 7px 0 #FFD400; transition: transform 120ms ease, box-shadow 120ms ease; }
+.brutal-card:hover { transform: translate(-3px,-3px); box-shadow: 10px 10px 0 #FFD400; }
+.brutal-card.in-cart { background: #FFD400; color: #000; border-color: #000; box-shadow: 7px 7px 0 #fff; }
+.brutal-btn { background: #FFD400; color: #000; border: 3px solid #000; border-radius: 4px; box-shadow: 4px 4px 0 #fff; font-family: var(--font-condensed); text-transform: uppercase; letter-spacing: .04em; }
+.brutal-btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 #fff; }
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }

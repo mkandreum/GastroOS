@@ -507,9 +507,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
 
 
       {/* HEADER CLIENTE */}
-      <header className="sticky top-0 z-30 bg-[#0B0C10]/80 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex justify-between items-center">
+      <header className="sticky top-0 z-30 bg-black border-b-4 border-[#FFD400] px-4 py-3 flex justify-between items-center">
         <div className="min-w-0 flex-1 pr-2">
-          <span className="text-[10px] font-mono text-amber-400 font-bold tracking-[0.2em] block uppercase">
+          <span className="text-[10px] font-mono text-[#FFD400] font-bold tracking-[0.2em] block uppercase">
             {tableNumber ? "Pedidos Mesa QR" : "Carta Online"}
           </span>
           <h1 className="font-display text-2xl sm:text-3xl uppercase text-white tracking-wide flex items-center truncate">
@@ -521,7 +521,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             <button 
               type="button"
               onClick={() => setIsCallWaiterModalOpen(true)}
-              className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 border border-amber-400 text-black font-bold rounded-full transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] space-x-1 shadow-sm"
+              className="px-3.5 py-2 bg-[#FFD400] hover:bg-white border border-amber-400 text-black font-bold rounded-full transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] space-x-1 shadow-sm"
               title="Llamar al Camarero"
             >
               <span>🛎️</span>
@@ -543,7 +543,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             type="button"
             onClick={() => setActiveTab("menu")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition min-h-[38px] ${
-              activeTab === "menu" ? "bg-amber-400 text-black" : "bg-white/10 hover:bg-white/20 text-white"
+              activeTab === "menu" ? "bg-[#FFD400] text-black" : "bg-white/10 hover:bg-white/20 text-white"
             }`}
             id="tab_client_menu"
           >
@@ -557,7 +557,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               fetchMyOrders();
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold relative transition min-h-[38px] ${
-              activeTab === "orders" ? "bg-amber-400 text-black" : "bg-white/10 text-white hover:bg-white/20"
+              activeTab === "orders" ? "bg-[#FFD400] text-black" : "bg-white/10 text-white hover:bg-white/20"
             }`}
             id="tab_client_orders"
           >
@@ -575,8 +575,21 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       {/* VISTA PRINCIPAL: CARTA */}
       {activeTab === "menu" && (
         <div className="flex-1 flex flex-col">
+          {/* HERO */}
+          <section className="px-4 pt-6 pb-8 overflow-hidden" aria-hidden="true">
+            <p className="font-mono text-[11px] font-bold tracking-[0.3em] text-white/70 uppercase">Hoy se come</p>
+            <h2 className="hero-title">La<br />Carta</h2>
+          </section>
+          <div className="marquee" aria-hidden="true">
+            <div className="marquee-track">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <span key={i}>Pide desde tu mesa ✦ Sin esperas ✦ Directo a cocina ✦</span>
+              ))}
+            </div>
+          </div>
+
           {/* BUSCADOR FUZZY */}
-          <div className="bg-[#0B0C10] px-4 pt-3 pb-1.5 sticky top-[61px] z-20">
+          <div className="bg-black px-4 pt-3 pb-1.5 sticky top-[61px] z-20">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs">🔍</span>
               <input
@@ -598,9 +611,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           </div>
 
           {/* CATEGORÍAS CIRCULARES */}
-          <section className="bg-[#0B0C10] py-2 border-b border-white/10 sticky top-[110px] z-20 relative">
-            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[#0B0C10] to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[#0B0C10] to-transparent pointer-events-none z-10" />
+          <section className="bg-black py-2 border-b border-white/10 sticky top-[110px] z-20 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black to-transparent pointer-events-none z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-black to-transparent pointer-events-none z-10" />
 
             <div className="flex space-x-4 overflow-x-auto px-6 py-1.5 scrollbar-none snap-x">
               {categories.map(cat => {
@@ -617,15 +630,15 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                     id={`btn_cat_${cat.id}`}
                     aria-label={`Categoría ${cat.name}`}
                   >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+                    <div className={`w-12 h-12 rounded-md flex items-center justify-center transition-all duration-200 ${
                       isActive 
-                        ? "bg-amber-400 text-black shadow-[0_0_30px_-4px_rgba(251,191,36,0.7)] scale-105" 
+                        ? "bg-[#FFD400] text-black border-2 border-white shadow-[3px_3px_0_#fff] scale-105" 
                         : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/20"
                     }`}>
                       {getCategoryIcon(cat.icon, cat.name)}
                     </div>
                     <span className={`text-[10px] font-black uppercase tracking-wider text-center ${
-                      isActive ? "text-amber-400 font-extrabold" : "text-white/50 font-bold"
+                      isActive ? "text-[#FFD400] font-extrabold" : "text-white/50 font-bold"
                     }`}>
                       {cat.name}
                     </span>
@@ -693,32 +706,27 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                 <motion.div
                   variants={itemVariants}
                   key={p.id}
-                  className={`group relative overflow-hidden rounded-[28px] flex flex-col transition-all duration-300 ${
-                    inCartQty > 0
-                      ? "bg-[#17130A] ring-2 ring-amber-400 shadow-[0_0_40px_-10px_rgba(251,191,36,0.55)]"
-                      : "bg-[#15161C] ring-1 ring-white/10 hover:ring-amber-400/50"
-                  }`}
+                  className={`brutal-card group relative overflow-hidden flex flex-col ${inCartQty > 0 ? "in-cart" : ""}`}
                   id={`product_card_${p.id}`}
                 >
-                  <div className="relative aspect-[4/3] bg-gradient-to-br from-amber-400/20 via-[#1c1d26] to-[#0B0C10] flex items-center justify-center text-amber-300 overflow-hidden [&>svg]:w-14 [&>svg]:h-14 [&>svg]:opacity-80">
+                  <div className="relative aspect-[4/3] bg-[#FFD400] border-b-[3px] border-inherit flex items-center justify-center text-black overflow-hidden [&>svg]:w-16 [&>svg]:h-16">
                     {p.image && p.image !== "default.jpg" ? (
-                      <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                      <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" />
                     ) : (
                       getCategoryIcon(categories.find((category) => category.id === p.categoryId)?.icon, p.name)
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#15161C] via-transparent to-transparent" />
-                    <span className="absolute bottom-2 left-3 font-display text-3xl sm:text-4xl text-amber-400 leading-none drop-shadow">
-                      {p.price.toFixed(2)}<span className="text-lg">€</span>
+                    <span className="absolute top-0 left-0 bg-black text-[#FFD400] font-display text-3xl sm:text-4xl leading-none px-3 py-1.5">
+                      {p.price.toFixed(2)}€
                     </span>
                     {inCartQty > 0 && (
-                      <span className="absolute top-3 right-3 min-w-7 h-7 px-2 bg-amber-400 text-black text-xs font-black rounded-full flex items-center justify-center">{inCartQty}</span>
+                      <span className="absolute top-2 right-2 min-w-8 h-8 px-2 bg-black text-[#FFD400] text-sm font-black rounded-full flex items-center justify-center">{inCartQty}</span>
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 pt-1">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5">
                     <div>
-                      <h3 className="font-display text-xl sm:text-2xl uppercase leading-[1.05] text-white">{p.name}</h3>
-                      <p className="text-white/50 text-xs line-clamp-2 mt-1.5 leading-relaxed">
+                      <h3 className="font-display text-2xl sm:text-3xl uppercase leading-[0.95]">{p.name}</h3>
+                      <p className={`text-xs line-clamp-2 mt-2 leading-relaxed ${inCartQty > 0 ? "text-black/70" : "text-white/60"}`}>
                         {p.description}
                       </p>
 
@@ -727,7 +735,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                           {p.allergens.map(al => (
                             <span
                               key={al}
-                              className="inline-flex items-center text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-white/70 font-medium"
+                              className={`inline-flex items-center text-[10px] px-1.5 py-0.5 border font-bold uppercase ${inCartQty > 0 ? "border-black text-black" : "border-white/60 text-white"}`}
                               title={al}
                             >
                               {getAllergenEmoji(al)} {al}
@@ -737,33 +745,29 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center mt-3 gap-2">
-                      <span className="text-[10px] truncate min-w-0">
+                    <div className="flex justify-between items-center mt-4 gap-2">
+                      <span className="text-[10px] truncate min-w-0 font-bold uppercase">
                         {p.stock !== null ? (
                           p.stock <= 5 ? (
-                            <span className="text-red-400 font-bold">¡Sólo {p.stock}!</span>
+                            <span className="text-red-500">¡Sólo {p.stock}!</span>
                           ) : (
-                            <span className="text-white/40">Quedan {p.stock}</span>
+                            <span className="opacity-60">Quedan {p.stock}</span>
                           )
                         ) : (
-                          <span className="text-emerald-400 font-semibold">Disponible</span>
+                          <span className="opacity-60">Disponible</span>
                         )}
                       </span>
 
-                      <motion.button
-                        whileTap={{ scale: 0.94 }}
+                      <button
                         onClick={(e) => {
                           triggerFlyParticle(e);
                           handleAddToCart(p);
                         }}
-                        className="bg-amber-400 hover:bg-amber-300 text-black font-black text-[11px] sm:text-xs uppercase tracking-wide px-4 py-2.5 rounded-full transition flex items-center gap-1 cursor-pointer shrink-0"
+                        className="brutal-btn text-lg px-4 py-1.5 cursor-pointer shrink-0"
                         id={`btn_add_${p.id}`}
                       >
-                        <span>{inCartQty > 0 ? "Otro +" : "Pedir"}</span>
-                        {p.modifierGroups && p.modifierGroups.length > 0 && (
-                          <span className="text-[9px] font-black">+</span>
-                        )}
-                      </motion.button>
+                        {inCartQty > 0 ? "Otro +1" : "Pedir"}{p.modifierGroups && p.modifierGroups.length > 0 ? " +" : ""}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -879,7 +883,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                     {!isCancelled && (
                       <div className="mt-3.5 bg-slate-100 h-1.5 rounded-full overflow-hidden flex">
                         <div className={`h-full transition-all duration-500 ${
-                          isPending ? "w-[25%] bg-amber-400" :
+                          isPending ? "w-[25%] bg-[#FFD400]" :
                           isCooking ? "w-[60%] bg-indigo-500" :
                           isReady ? "w-[90%] bg-emerald-500" : "w-full bg-slate-400"
                         }`} />
@@ -895,7 +899,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
 
       {/* FLOAT BAR DE BOTÓN DE COMPRA (CARRITO) */}
       {cart.length > 0 && activeTab === "menu" && (
-        <div className="fixed bottom-20 left-4 right-4 sm:bottom-0 sm:left-0 sm:right-0 sm:p-4 sm:bg-gradient-to-t sm:from-white sm:via-white/95 sm:to-transparent z-30 flex justify-center pointer-events-none">
+        <div className="fixed bottom-20 left-4 right-4 sm:bottom-0 sm:left-0 sm:right-0 sm:p-4  z-30 flex justify-center pointer-events-none">
           <motion.button
             key={cartTrigger}
             initial={{ scale: 0.9, y: 5 }}
@@ -1094,7 +1098,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               id="modifier_modal"
             >
               {/* Product Header Graphic with Gradient & Emoji */}
-              <div className="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative flex items-center justify-center shrink-0">
+              <div className="h-40 bg-[#FFD400] border-b-4 border-black relative flex items-center justify-center shrink-0">
                 {/* Drag handle for mobile */}
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/40 rounded-full" />
                 <span className="text-6xl drop-shadow-lg select-none">
@@ -1213,13 +1217,13 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       </AnimatePresence>
 
       {/* BOTTOM NAVIGATION PILL FOR MOBILE */}
-      <div className="sm:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[85%] max-w-[280px] bg-slate-950/90 backdrop-blur-md rounded-full shadow-2xl z-40 flex justify-around items-center py-2.5 px-4 border border-white/10">
+      <div className="sm:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[85%] max-w-[280px] bg-black border-[3px] border-[#FFD400] rounded-md shadow-[4px_4px_0_#FFD400] z-40 flex justify-around items-center py-2.5 px-4 border border-white/10">
         <motion.button
           whileTap={{ scale: 0.95 }}
           type="button"
           onClick={() => setActiveTab("menu")}
           className={`flex flex-col items-center justify-center space-y-0.5 text-xs font-bold transition-all relative ${
-            activeTab === "menu" ? "text-amber-400 scale-105" : "text-slate-400 hover:text-slate-200"
+            activeTab === "menu" ? "text-[#FFD400] scale-105" : "text-slate-400 hover:text-slate-200"
           }`}
           id="mobile_tab_client_menu"
         >
@@ -1235,7 +1239,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             fetchMyOrders();
           }}
           className={`flex flex-col items-center justify-center space-y-0.5 text-xs font-bold transition-all relative ${
-            activeTab === "orders" ? "text-amber-400 scale-105" : "text-slate-400 hover:text-slate-200"
+            activeTab === "orders" ? "text-[#FFD400] scale-105" : "text-slate-400 hover:text-slate-200"
           }`}
           id="mobile_tab_client_orders"
         >
