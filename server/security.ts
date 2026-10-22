@@ -191,8 +191,8 @@ export function createRateLimiter(options: RateLimitOptions) {
   };
 }
 
+// req.ip ya respeta "trust proxy". La primera entrada de X-Forwarded-For la controla el cliente,
+// así que leerla directamente permitiría saltarse los límites enviando una cabecera falsa.
 export function clientIp(req: any): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.length > 0) return forwarded.split(",")[0].trim();
   return req.ip || req.socket?.remoteAddress || "unknown";
 }

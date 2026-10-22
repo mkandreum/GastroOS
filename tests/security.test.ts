@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clientIp,
   hashPassword,
   isLegacyHash,
   isPrivateAddress,
@@ -77,5 +78,12 @@ describe("printer network validation", () => {
     expect(isPrivateAddress("169.254.169.254")).toBe(false);
     expect(isPrivateAddress("193.127.45.74")).toBe(false);
     expect(isPrivateAddress("example.com")).toBe(false);
+  });
+});
+
+describe("clientIp", () => {
+  it("usa req.ip e ignora la primera entrada de X-Forwarded-For, que la controla el cliente", () => {
+    const req = { ip: "203.0.113.7", headers: { "x-forwarded-for": "1.2.3.4, 203.0.113.7" } };
+    expect(clientIp(req)).toBe("203.0.113.7");
   });
 });
