@@ -233,7 +233,7 @@ export default function BarView() {
             isHighContrast ? "text-yellow-400 border border-yellow-400 bg-black" : "text-sky-400 bg-sky-400/10"
           }`}>KDS - Bar & Beverage Terminal</span>
           <h1 className="text-2xl font-black tracking-tight text-white mt-1.5 flex items-center col-span-2">
-            <span>🍹 Control de Bebidas y Barra</span>
+            <span>Control de Bebidas y Barra</span>
           </h1>
         </div>
         <div className="flex items-center space-x-3 mt-3 md:mt-0">
@@ -245,7 +245,7 @@ export default function BarView() {
                 : "bg-slate-800 text-white border-slate-700 hover:bg-slate-700"
             }`}
           >
-            🌓 {isHighContrast ? "Contraste Estándar" : "Alto Contraste"}
+            {isHighContrast ? "Contraste Estándar" : "Alto Contraste"}
           </button>
           <button
             onClick={toggleFullscreen}
@@ -255,7 +255,7 @@ export default function BarView() {
                 : "bg-slate-800 text-white border-slate-700 hover:bg-slate-700"
             }`}
           >
-            🖥️ {isFullscreen ? "Salir Completo" : "Pantalla Completa"}
+            {isFullscreen ? "Salir Completo" : "Pantalla Completa"}
           </button>
           
           <span className={`text-xs border rounded-lg px-3 py-1.5 font-bold ${
@@ -339,7 +339,7 @@ export default function BarView() {
                           )}
                           {line.notes && (
                             <p className="text-[10px] font-mono bg-indigo-500/10 text-sky-300 p-1 rounded inline-block mt-1">
-                              📝 "{line.notes}"
+                              "{line.notes}"
                             </p>
                           )}
                         </div>

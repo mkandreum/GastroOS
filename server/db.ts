@@ -55,6 +55,10 @@ function resolveAdminPassword(): string {
   return "admin123";
 }
 
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 interface OrderFilters {
   tableId?: string;
   sessionId?: string;
@@ -67,6 +71,7 @@ interface OrderFilters {
 interface ClosedReceiptFilters {
   from?: string;
   to?: string;
+  sessionId?: string;
   limit?: number;
 }
 
@@ -459,6 +464,7 @@ class LocalDatabase {
       if (admins.count <= 1) return false;
     }
     db.prepare("DELETE FROM users WHERE id = ?").run(id);
+    db.prepare("DELETE FROM push_subscriptions WHERE userId = ?").run(id);
     return true;
   }
 
@@ -780,7 +786,7 @@ class LocalDatabase {
             Number(item.price) || 0,
             item.image || "default.jpg",
             JSON.stringify(item.allergens || []),
-            Number(item.iva) || 10,
+            Number.isFinite(Number(item.iva)) ? Number(item.iva) : 10,
             item.available ? 1 : 0,
             item.stock === undefined ? null : item.stock,
             JSON.stringify([]),
@@ -920,17 +926,16 @@ class LocalDatabase {
     const table = this.getTableById(tableId);
     if (!table || !table.activeSessionId) return;
 
-    const sessionId = table.activeSessionId;
-    const activeOrders = db.prepare("SELECT totalAmount FROM orders WHERE tableId = ? AND sessionId = ? AND status != 'cancelado'").all(tableId, sessionId) as any[];
-    const sessionTotal = activeOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
-    const flatPaidQuery = db.prepare("SELECT SUM(total) AS sum FROM closed_receipts WHERE sessionId = ? AND splitMethod != 'por_lineas'").get(sessionId) as any;
-    const flatPaidInSession = flatPaidQuery ? parseFloat(flatPaidQuery.sum || 0) : 0;
-    const remainingTotal = Math.max(0, sessionTotal - flatPaidInSession);
+    const { remaining } = this.getSessionMoney(tableId, table.activeSessionId);
+    const liveOrders = db.prepare("SELECT count(*) AS count FROM orders WHERE tableId = ? AND sessionId = ? AND status != 'cancelado'")
+      .get(tableId, table.activeSessionId) as { count: number };
 
-    if (remainingTotal === 0) {
+    // La mesa solo se libera sola cuando ya no queda ningún pedido vivo (p. ej. se anuló todo).
+    // Con pedidos a 0 € o ya pagados a cuenta sigue abierta hasta que sala la cierre.
+    if (liveOrders.count === 0) {
       db.prepare("UPDATE tables SET currentBillTotal = 0, status = 'libre', activeSessionId = NULL, sessionStartedAt = NULL WHERE id = ?").run(tableId);
     } else {
-      db.prepare("UPDATE tables SET currentBillTotal = ? WHERE id = ?").run(parseFloat(remainingTotal.toFixed(2)), tableId);
+      db.prepare("UPDATE tables SET currentBillTotal = ? WHERE id = ?").run(remaining, tableId);
     }
   }
 
@@ -982,170 +987,209 @@ class LocalDatabase {
     return this.getOrderById(orderId);
   }
 
+  /** Importes de la sesión abierta: total pedido, pagos a cuenta y resto pendiente. */
+  public getSessionMoney(tableId: string, sessionId: string) {
+    const row = db.prepare("SELECT COALESCE(SUM(totalAmount), 0) AS total FROM orders WHERE tableId = ? AND sessionId = ? AND status != 'cancelado'").get(tableId, sessionId) as any;
+    const paid = db.prepare("SELECT COALESCE(SUM(total), 0) AS sum FROM closed_receipts WHERE sessionId = ? AND splitMethod != 'por_lineas'").get(sessionId) as any;
+    const sessionTotal = round2(parseFloat(row?.total || 0));
+    const flatPaid = round2(parseFloat(paid?.sum || 0));
+    return { sessionTotal, flatPaid, remaining: round2(Math.max(0, sessionTotal - flatPaid)) };
+  }
+
+  /**
+   * Cobra la cuenta de una mesa. Los importes salen siempre de las líneas guardadas en la base:
+   * del cliente solo se aceptan qué líneas se pagan (por_lineas) o qué importe a cuenta (partes_iguales).
+   */
   public closeTableSession(
     tableId: string,
     customReceiptItems?: any[],
     splitCalculationMethod?: string,
-    meta?: { paymentMethod?: string; closedBy?: string }
+    meta?: { paymentMethod?: string; closedBy?: string; amount?: number }
   ) {
-    const table = this.getTableById(tableId);
-    if (!table || !table.activeSessionId) return null;
+    return db.transaction(() => {
+      const table = this.getTableById(tableId);
+      if (!table || !table.activeSessionId) return null;
 
-    const sessionId = table.activeSessionId;
-    const activeOrders = this.getOrders({ tableId, sessionId }).filter((order) => order.status !== "cancelado");
+      const sessionId = table.activeSessionId;
+      const splitMethod = splitCalculationMethod === "por_lineas" || splitCalculationMethod === "partes_iguales" ? splitCalculationMethod : "completa";
+      const activeOrders = this.getOrders({ tableId, sessionId, limit: 1000 }).filter((order) => order.status !== "cancelado");
 
-    if (activeOrders.length === 0 && (!customReceiptItems || customReceiptItems.length === 0)) {
-      this.updateTable(tableId, { status: "libre", activeSessionId: null, currentBillTotal: 0, sessionStartedAt: null });
-      return { success: true, empty: true };
-    }
-
-    const items: any[] = [];
-    const taxBreakdown: Record<string, number> = {};
-    let subtotal = 0;
-    let taxAmount = 0;
-
-    const addItem = (item: any, rate: number) => {
-      const gross = Number(item.priceTotal) || 0;
-      const tax = taxFromGross(gross, rate);
-      items.push({
-        productId: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-        priceUnit: item.priceUnit,
-        priceTotal: gross,
-        taxRate: rate,
-        notes: item.notes || "",
-        selectedExtras: item.selectedExtras || []
-      });
-      subtotal += gross;
-      taxAmount += tax;
-      const key = String(rate);
-      taxBreakdown[key] = Math.round(((taxBreakdown[key] || 0) + tax) * 100) / 100;
-    };
-
-    if (customReceiptItems && customReceiptItems.length > 0) {
-      for (const item of customReceiptItems) {
-        const product = item.productId ? this.getProductById(item.productId) : null;
-        const parsedRate = Number(item.taxRate);
-        const rate = product?.iva ?? (Number.isFinite(parsedRate) ? parsedRate : 10);
-        addItem(item, rate);
+      if (activeOrders.length === 0) {
+        this.updateTable(tableId, { status: "libre", activeSessionId: null, currentBillTotal: 0, sessionStartedAt: null });
+        return { success: true, empty: true };
       }
-    } else {
-      for (const order of activeOrders) {
-        for (const line of order.items) {
-          addItem(
-            {
-              ...line,
-              name: line.name + (line.selectedExtras.length > 0 ? ` (${line.selectedExtras.map((extra) => extra.optionName).join(", ")})` : "")
-            },
-            line.taxRate ?? (line.destination === "bar" ? 21 : 10)
-          );
-        }
-      }
-    }
 
-    const receipt = {
-      id: `rec-${crypto.randomUUID()}`,
-      tableId,
-      tableName: table.name,
-      sessionId,
-      invoiceNumber: this.nextSequence("invoice", 1),
-      subtotal: parseFloat(subtotal.toFixed(2)),
-      taxAmount: parseFloat(taxAmount.toFixed(2)),
-      total: parseFloat(subtotal.toFixed(2)),
-      timestamp: new Date().toISOString(),
-      openedAt: table.sessionStartedAt || null,
-      items,
-      taxBreakdown,
-      splitMethod: splitCalculationMethod || "completa",
-      paymentMethod: meta?.paymentMethod || "efectivo",
-      closedBy: meta?.closedBy || null
-    };
+      const lineRate = (line: OrderLine) => line.taxRate ?? (line.destination === "bar" ? 21 : 10);
+      const items: any[] = [];
+      const taxBreakdown: Record<string, number> = {};
+      let subtotal = 0;
+      let taxAmount = 0;
+      const addItem = (item: any, rate: number) => {
+        const gross = round2(Number(item.priceTotal) || 0);
+        const tax = taxFromGross(gross, rate);
+        items.push({
+          productId: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          priceUnit: item.priceUnit,
+          priceTotal: gross,
+          taxRate: rate,
+          notes: item.notes || "",
+          selectedExtras: item.selectedExtras || []
+        });
+        subtotal += gross;
+        taxAmount += tax;
+        const key = String(rate);
+        taxBreakdown[key] = round2((taxBreakdown[key] || 0) + tax);
+      };
+      const displayName = (line: { name: string; selectedExtras?: Array<{ optionName: string }> }) =>
+        line.name + (line.selectedExtras && line.selectedExtras.length > 0 ? ` (${line.selectedExtras.map((extra) => extra.optionName).join(", ")})` : "");
 
-    db.prepare(`
-      INSERT INTO closed_receipts
-      (id, tableId, tableName, sessionId, subtotal, taxAmount, total, timestamp, items, splitMethod, invoiceNumber, paymentMethod, closedBy, openedAt, taxBreakdown)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      receipt.id,
-      receipt.tableId,
-      receipt.tableName,
-      receipt.sessionId,
-      receipt.subtotal,
-      receipt.taxAmount,
-      receipt.total,
-      receipt.timestamp,
-      JSON.stringify(receipt.items),
-      receipt.splitMethod,
-      receipt.invoiceNumber,
-      receipt.paymentMethod,
-      receipt.closedBy,
-      receipt.openedAt,
-      JSON.stringify(receipt.taxBreakdown)
-    );
+      const before = this.getSessionMoney(tableId, sessionId);
 
-    const isPartialPayment = splitCalculationMethod !== "completa" && (
-      (!!customReceiptItems && customReceiptItems.length > 0) || splitCalculationMethod === "partes_iguales"
-    );
+      if (splitMethod === "por_lineas") {
+        for (const raw of (customReceiptItems || []).slice(0, 200)) {
+          const productId = typeof raw?.productId === "string" ? raw.productId : "";
+          let wanted = Math.trunc(Number(raw?.quantity));
+          if (!productId || !Number.isFinite(wanted) || wanted < 1) continue;
+          const notes = typeof raw?.notes === "string" ? raw.notes : "";
+          const extrasStr = JSON.stringify(Array.isArray(raw?.selectedExtras) ? raw.selectedExtras : []);
+          const rows = db.prepare(`
+            SELECT oi.* FROM order_items oi
+            JOIN orders o ON oi.orderId = o.id
+            WHERE o.tableId = ? AND o.sessionId = ? AND o.status != 'cancelado'
+              AND oi.productId = ?
+              AND (oi.notes = ? OR (oi.notes IS NULL AND ? = ''))
+              AND oi.selectedExtras = ?
+            ORDER BY oi.rowid ASC
+          `).all(tableId, sessionId, productId, notes, notes, extrasStr) as any[];
 
-    if (!isPartialPayment) {
-      db.prepare("UPDATE orders SET status = 'servido', closedAt = ? WHERE tableId = ? AND sessionId = ?").run(receipt.timestamp, tableId, sessionId);
-      db.prepare("UPDATE order_items SET stationStatus = 'servido' WHERE orderId IN (SELECT id FROM orders WHERE tableId = ? AND sessionId = ?)").run(tableId, sessionId);
-      this.updateTable(tableId, { status: "libre", activeSessionId: null, currentBillTotal: 0, sessionStartedAt: null });
-    } else {
-      if (customReceiptItems && customReceiptItems.length > 0 && splitCalculationMethod === "por_lineas") {
-        db.transaction(() => {
-          for (const item of customReceiptItems) {
-            let qtyRemainingToDeduct = item.quantity;
-            const productId = item.productId;
-            const notes = item.notes || "";
-            const extrasStr = JSON.stringify(item.selectedExtras || []);
-            const orderItems = db.prepare(`
-              SELECT oi.* FROM order_items oi
-              JOIN orders o ON oi.orderId = o.id
-              WHERE o.tableId = ? AND o.sessionId = ? AND o.status != 'cancelado'
-                AND oi.productId = ?
-                AND (oi.notes = ? OR (oi.notes IS NULL AND ? = ''))
-                AND oi.selectedExtras = ?
-            `).all(tableId, sessionId, productId, notes, notes, extrasStr) as any[];
-
-            for (const orderItem of orderItems) {
-              if (qtyRemainingToDeduct <= 0) break;
-              const deductQty = Math.min(qtyRemainingToDeduct, orderItem.quantity);
-              const newQty = orderItem.quantity - deductQty;
-              qtyRemainingToDeduct -= deductQty;
-              if (newQty <= 0) {
-                db.prepare("DELETE FROM order_items WHERE id = ?").run(orderItem.id);
-              } else {
-                const newPriceTotal = parseFloat((newQty * orderItem.priceUnit).toFixed(2));
-                db.prepare("UPDATE order_items SET quantity = ?, priceTotal = ? WHERE id = ?").run(newQty, newPriceTotal, orderItem.id);
-              }
-              const orderItemsLeft = db.prepare("SELECT priceTotal FROM order_items WHERE orderId = ?").all(orderItem.orderId) as any[];
-              const newOrderTotal = orderItemsLeft.reduce((sum, line) => sum + parseFloat(line.priceTotal || 0), 0);
-              db.prepare("UPDATE orders SET totalAmount = ? WHERE id = ?").run(newOrderTotal, orderItem.orderId);
-              if (orderItemsLeft.length === 0) {
-                db.prepare("DELETE FROM orders WHERE id = ?").run(orderItem.orderId);
-              }
+          for (const row of rows) {
+            if (wanted <= 0) break;
+            const take = Math.min(wanted, row.quantity);
+            wanted -= take;
+            const priceUnit = parseFloat(row.priceUnit || 0);
+            addItem(
+              {
+                productId: row.productId,
+                name: displayName({ name: row.name, selectedExtras: JSON.parse(row.selectedExtras || "[]") }),
+                quantity: take,
+                priceUnit,
+                priceTotal: priceUnit * take,
+                notes: row.notes || "",
+                selectedExtras: JSON.parse(row.selectedExtras || "[]")
+              },
+              Number(row.taxRate ?? (row.destination === "bar" ? 21 : 10))
+            );
+            const left = row.quantity - take;
+            if (left <= 0) {
+              db.prepare("DELETE FROM order_items WHERE id = ?").run(row.id);
+            } else {
+              db.prepare("UPDATE order_items SET quantity = ?, priceTotal = ? WHERE id = ?").run(left, round2(left * priceUnit), row.id);
+            }
+            const remainingLines = db.prepare("SELECT priceTotal FROM order_items WHERE orderId = ?").all(row.orderId) as any[];
+            if (remainingLines.length === 0) {
+              db.prepare("DELETE FROM orders WHERE id = ?").run(row.orderId);
+            } else {
+              db.prepare("UPDATE orders SET totalAmount = ? WHERE id = ?")
+                .run(round2(remainingLines.reduce((sum, line) => sum + parseFloat(line.priceTotal || 0), 0)), row.orderId);
             }
           }
-        })();
-      }
-
-      this.recalculateTableBillTotal(tableId);
-      const after = this.getTableById(tableId);
-      if (after?.activeSessionId) {
-        db.prepare("UPDATE tables SET status = 'pendiente_pago' WHERE id = ?").run(tableId);
+        }
+        if (items.length === 0) throw new Error("Ninguna de las líneas indicadas sigue pendiente en la cuenta.");
       } else {
-        db.prepare("UPDATE orders SET status = 'servido', closedAt = ? WHERE tableId = ? AND sessionId = ? AND status != 'cancelado'").run(receipt.timestamp, tableId, sessionId);
-        db.prepare("UPDATE order_items SET stationStatus = 'servido' WHERE orderId IN (SELECT id FROM orders WHERE tableId = ? AND sessionId = ?)").run(tableId, sessionId);
-      }
-    }
+        // Impuestos de toda la sesión, para repartirlos en proporción a lo que se cobra ahora.
+        const sessionTaxByRate: Record<string, number> = {};
+        let sessionGross = 0;
+        for (const order of activeOrders) {
+          for (const line of order.items) {
+            const key = String(lineRate(line));
+            sessionTaxByRate[key] = (sessionTaxByRate[key] || 0) + taxFromGross(line.priceTotal, lineRate(line));
+            sessionGross += line.priceTotal;
+          }
+        }
+        let charge = before.remaining;
+        if (splitMethod === "partes_iguales") {
+          const requested = round2(Number(meta?.amount ?? customReceiptItems?.[0]?.priceTotal));
+          if (!Number.isFinite(requested) || requested <= 0) throw new Error("Importe a cuenta no válido.");
+          charge = Math.min(requested, before.remaining);
+          // El último pago absorbe los céntimos de redondeo.
+          if (before.remaining - charge < 0.05) charge = before.remaining;
+        }
+        const ratio = sessionGross > 0 ? charge / sessionGross : 0;
 
-    return receipt;
+        if (splitMethod === "partes_iguales") {
+          items.push({ name: "Pago a cuenta", quantity: 1, priceUnit: charge, priceTotal: charge, notes: "", selectedExtras: [] });
+        } else {
+          for (const order of activeOrders) {
+            for (const line of order.items) {
+              items.push({
+                productId: line.productId,
+                name: displayName(line),
+                quantity: line.quantity,
+                priceUnit: line.priceUnit,
+                priceTotal: line.priceTotal,
+                taxRate: lineRate(line),
+                notes: line.notes || "",
+                selectedExtras: line.selectedExtras || []
+              });
+            }
+          }
+          if (before.flatPaid > 0) {
+            items.push({ name: "Pagos a cuenta anteriores", quantity: 1, priceUnit: -before.flatPaid, priceTotal: -before.flatPaid, notes: "", selectedExtras: [] });
+          }
+        }
+        subtotal = charge;
+        for (const [key, value] of Object.entries(sessionTaxByRate)) {
+          const part = round2(value * ratio);
+          if (part !== 0) taxBreakdown[key] = part;
+          taxAmount += part;
+        }
+      }
+
+      const receipt = {
+        id: `rec-${crypto.randomUUID()}`,
+        tableId,
+        tableName: table.name,
+        sessionId,
+        invoiceNumber: this.nextSequence("invoice", 1),
+        subtotal: round2(subtotal),
+        taxAmount: round2(taxAmount),
+        total: round2(subtotal),
+        timestamp: new Date().toISOString(),
+        openedAt: table.sessionStartedAt || null,
+        items,
+        taxBreakdown,
+        splitMethod,
+        paymentMethod: meta?.paymentMethod || "efectivo",
+        closedBy: meta?.closedBy || null
+      };
+
+      db.prepare(`
+        INSERT INTO closed_receipts
+        (id, tableId, tableName, sessionId, subtotal, taxAmount, total, timestamp, items, splitMethod, invoiceNumber, paymentMethod, closedBy, openedAt, taxBreakdown)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        receipt.id, receipt.tableId, receipt.tableName, receipt.sessionId, receipt.subtotal, receipt.taxAmount, receipt.total,
+        receipt.timestamp, JSON.stringify(receipt.items), receipt.splitMethod, receipt.invoiceNumber, receipt.paymentMethod,
+        receipt.closedBy, receipt.openedAt, JSON.stringify(receipt.taxBreakdown)
+      );
+
+      const after = this.getSessionMoney(tableId, sessionId);
+      if (splitMethod === "completa" || after.remaining < 0.01) {
+        db.prepare("UPDATE orders SET status = 'servido', closedAt = ? WHERE tableId = ? AND sessionId = ? AND status != 'cancelado'").run(receipt.timestamp, tableId, sessionId);
+        db.prepare("UPDATE order_items SET stationStatus = 'servido' WHERE stationStatus != 'cancelado' AND orderId IN (SELECT id FROM orders WHERE tableId = ? AND sessionId = ?)").run(tableId, sessionId);
+        this.updateTable(tableId, { status: "libre", activeSessionId: null, currentBillTotal: 0, sessionStartedAt: null });
+      } else {
+        db.prepare("UPDATE tables SET status = 'pendiente_pago', currentBillTotal = ? WHERE id = ?").run(after.remaining, tableId);
+      }
+
+      return receipt;
+    })();
   }
 
   public getStats(filters: ClosedReceiptFilters = {}): AdminStats {
-    const history = this.getClosedReceipts(filters);
+    const history = this.getClosedReceipts({ ...filters, limit: 100000 });
     const activeTables = this.getTables().filter((table) => table.status !== "libre");
     const totalSales = history.reduce((sum, receipt) => sum + receipt.total, 0);
     const totalTickets = history.length;
@@ -1154,6 +1198,8 @@ class LocalDatabase {
     const productFrequency: { [key: string]: { qty: number; revenue: number } } = {};
     history.forEach((receipt) => {
       receipt.items.forEach((item: any) => {
+        // Las líneas sin producto (pagos a cuenta, ajustes) no son platos.
+        if (!item.productId) return;
         const name = item.name;
         const qty = item.quantity || 1;
         const total = item.priceTotal || item.priceUnit * qty;
@@ -1266,7 +1312,7 @@ class LocalDatabase {
   }
 
   public getSalesByTable(filters: ClosedReceiptFilters = {}) {
-    const history = this.getClosedReceipts({ ...filters, limit: 5000 });
+    const history = this.getClosedReceipts({ ...filters, limit: 100000 });
     const tableMap: { [key: string]: { tableName: string; totalSales: number; ticketCount: number; lastTicket: string | null } } = {};
     history.forEach((receipt) => {
       const key = receipt.tableName || receipt.tableId;
@@ -1291,10 +1337,23 @@ class LocalDatabase {
       clauses.push("timestamp <= ?");
       values.push(filters.to);
     }
+    if (filters.sessionId) {
+      clauses.push("sessionId = ?");
+      values.push(filters.sessionId);
+    }
     const where = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : "";
-    const limit = Math.min(Math.max(filters.limit ?? 500, 1), 5000);
+    const limit = Math.min(Math.max(filters.limit ?? 500, 1), 100000);
     const rows = db.prepare(`SELECT * FROM closed_receipts ${where} ORDER BY timestamp DESC LIMIT ?`).all(...values, limit) as any[];
-    return rows.map((row) => ({
+    return rows.map((row) => this.mapReceipt(row));
+  }
+
+  public getClosedReceiptById(id: string) {
+    const row = db.prepare("SELECT * FROM closed_receipts WHERE id = ?").get(id) as any;
+    return row ? this.mapReceipt(row) : undefined;
+  }
+
+  private mapReceipt(row: any) {
+    return {
       id: row.id,
       tableId: row.tableId,
       tableName: row.tableName,
@@ -1310,7 +1369,7 @@ class LocalDatabase {
       closedBy: row.closedBy || null,
       openedAt: row.openedAt || null,
       taxBreakdown: JSON.parse(row.taxBreakdown || "{}")
-    }));
+    };
   }
 
   public getTicketTemplate(): TicketTemplate {
@@ -1421,10 +1480,15 @@ class LocalDatabase {
       fields.push("items = ?");
       values.push(JSON.stringify(updates.items));
     }
-    if (fields.length === 0) return db.prepare("SELECT * FROM closed_receipts WHERE id = ?").get(id);
-    values.push(id);
-    db.prepare(`UPDATE closed_receipts SET ${fields.join(", ")} WHERE id = ?`).run(...values);
-    return db.prepare("SELECT * FROM closed_receipts WHERE id = ?").get(id);
+    if (updates.taxBreakdown !== undefined) {
+      fields.push("taxBreakdown = ?");
+      values.push(JSON.stringify(updates.taxBreakdown));
+    }
+    if (fields.length > 0) {
+      values.push(id);
+      db.prepare(`UPDATE closed_receipts SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+    }
+    return this.getClosedReceiptById(id);
   }
 
   public getPendingWaiterCalls(): WaiterCall[] {

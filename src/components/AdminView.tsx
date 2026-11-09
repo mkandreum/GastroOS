@@ -9,7 +9,8 @@ import {
 } from "motion/react";
 import { 
   BarChart3, Settings, Table as TableIcon, BookOpen, Printer, Shield, ChevronRight, 
-  Trash2, PlusCircle, Edit3, Check, Eye, Download, Info, RefreshCw, AlertTriangle, UserCheck
+  Trash2, PlusCircle, Edit3, Check, Eye, Download, Info, RefreshCw, AlertTriangle, UserCheck,
+  ReceiptText, Palette, ScrollText
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import ConfirmDialog from "./ConfirmDialog";
@@ -417,7 +418,7 @@ export default function AdminView() {
         } else {
           setTestPrintStatus({ 
             success: false, 
-            msg: `⚠️ Bloqueado por seguridad del navegador (Mixed Content HTTPS a HTTP) o impresora fuera de línea. Abriendo ventana de impresión HTML/CSS de respaldo. Para impresión ZPL directa, por favor lee las instrucciones adjuntas.` 
+            msg: `Bloqueado por seguridad del navegador (Mixed Content HTTPS a HTTP) o impresora fuera de línea. Abriendo ventana de impresión HTML/CSS de respaldo. Para impresión ZPL directa, por favor lee las instrucciones adjuntas.` 
           });
         }
         
@@ -801,7 +802,7 @@ export default function AdminView() {
                 activeTab === "tickets" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
               }`}
             >
-              <span className="text-base">🧾</span>
+              <ReceiptText className="w-4 h-4" />
               <span>Historial Tickets</span>
             </button>
 
@@ -811,7 +812,7 @@ export default function AdminView() {
                 activeTab === "ticket-tpl" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
               }`}
             >
-              <span className="text-base">🎨</span>
+              <Palette className="w-4 h-4" />
               <span>Diseño Ticket</span>
             </button>
 
@@ -821,7 +822,7 @@ export default function AdminView() {
                 activeTab === "audit" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
               }`}
             >
-              <span className="text-base">A</span>
+              <ScrollText className="w-4 h-4" />
               <span>Auditoría</span>
             </button>
 
@@ -897,7 +898,7 @@ export default function AdminView() {
                 </div>
                 {hoveredHourPoint && (
                   <div className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-md animate-fade-in shrink-0">
-                    🕒 {hoveredHourPoint.hour} | <span className="text-indigo-300">{hoveredHourPoint.sales.toFixed(2)}€</span>
+                    {hoveredHourPoint.hour} | <span className="text-indigo-300">{hoveredHourPoint.sales.toFixed(2)}€</span>
                   </div>
                 )}
               </div>
@@ -1457,7 +1458,7 @@ export default function AdminView() {
             <h2 className="text-lg font-black text-slate-800">Gestión de Mesas y Diseño del Salón</h2>
             
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
-              💡 Cada mesa del restaurante cuenta con un código QR único. Puedes crearlas, eliminarlas y organizar su posición en el plano del salón arrastrándolas.
+              Cada mesa del restaurante cuenta con un código QR único. Puedes crearlas, eliminarlas y organizar su posición en el plano del salón arrastrándolas.
             </p>
 
             {/* Formulario crear mesa */}
@@ -1508,7 +1509,7 @@ export default function AdminView() {
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                 <div className="flex items-center space-x-3">
                   <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center space-x-1.5">
-                    <span>📐 Diseño del Salón</span>
+                    <span>Diseño del Salón</span>
                   </h3>
                   <button
                     type="button"
@@ -1519,7 +1520,7 @@ export default function AdminView() {
                         : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    <span>🔥 Mapa Térmico de Facturación</span>
+                    <span>Mapa Térmico de Facturación</span>
                   </button>
                 </div>
                 <span className="text-[10px] text-slate-500">Arrastra las mesas para colocarlas</span>
@@ -1779,7 +1780,7 @@ export default function AdminView() {
               {/* Ajustes de Red - Cocina */}
               <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
                 <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 pb-1.5 border-b border-slate-100 flex items-center">
-                  <span>🍳 Impresora de Cocina por IP Fija</span>
+                  <span>Impresora de Cocina por IP Fija</span>
                 </h3>
 
                 <form onSubmit={handleSavePrinter} className="space-y-3.5 text-xs text-slate-600">
@@ -1840,7 +1841,7 @@ export default function AdminView() {
                             : "bg-slate-50 text-slate-500 border-slate-200 hover:border-indigo-200"
                         }`}
                       >
-                        🌐 Navegador Directo
+                        Navegador Directo
                       </button>
                       <button
                         type="button"
@@ -1851,7 +1852,7 @@ export default function AdminView() {
                             : "bg-slate-50 text-slate-500 border-slate-200 hover:border-indigo-200"
                         }`}
                       >
-                        🖥️ Servidor TCP
+                        Servidor TCP
                       </button>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1">
@@ -1873,7 +1874,7 @@ export default function AdminView() {
                     onClick={() => triggerTestPrint("kitchen")}
                     className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-extrabold py-2.5 px-4 rounded-lg flex justify-center items-center cursor-pointer transition"
                   >
-                    <span>🎯 Mandar Comanda de Prueba</span>
+                    <span>Mandar Comanda de Prueba</span>
                   </button>
                 </form>
 
@@ -1885,7 +1886,7 @@ export default function AdminView() {
                     "bg-amber-50 text-amber-800 border-amber-200"
                   }`}>
                     {testPrintStatus.success === false && (
-                      <span className="font-extrabold block mb-1">⚠️ Error de red local simulado:</span>
+                      <span className="font-extrabold block mb-1">Error de red local simulado:</span>
                     )}
                     <p className="font-mono leading-relaxed">{testPrintStatus.msg}</p>
                   </div>
@@ -1895,7 +1896,7 @@ export default function AdminView() {
               {/* Ajustes de Red - Tickets */}
               <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
                 <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 pb-1.5 border-b border-slate-100 flex items-center">
-                  <span>🧾 Impresora de Tickets por IP Fija</span>
+                  <span>Impresora de Tickets por IP Fija</span>
                 </h3>
 
                 <form onSubmit={handleSaveTicketPrinter} className="space-y-3.5 text-xs text-slate-600">
@@ -1956,7 +1957,7 @@ export default function AdminView() {
                             : "bg-slate-50 text-slate-500 border-slate-200 hover:border-indigo-200"
                         }`}
                       >
-                        🌐 Navegador Directo
+                        Navegador Directo
                       </button>
                       <button
                         type="button"
@@ -1967,7 +1968,7 @@ export default function AdminView() {
                             : "bg-slate-50 text-slate-500 border-slate-200 hover:border-indigo-200"
                         }`}
                       >
-                        🖥️ Servidor TCP
+                        Servidor TCP
                       </button>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1">
@@ -1989,7 +1990,7 @@ export default function AdminView() {
                     onClick={() => triggerTestPrint("ticket")}
                     className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-extrabold py-2.5 px-4 rounded-lg flex justify-center items-center cursor-pointer transition mt-2"
                   >
-                    <span>🎯 Mandar Ticket de Prueba</span>
+                    <span>Mandar Ticket de Prueba</span>
                   </button>
                 </form>
               </div>
@@ -2254,7 +2255,7 @@ export default function AdminView() {
             <h2 className="text-lg font-black text-slate-800">Gestión de Personal / Usuarios</h2>
             
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
-              💡 Registra las cuentas del personal. Sus permisos y accesos estarán determinados por el rol asignado. Los camareros, cocineros y baristas no tendrán acceso al panel de administración ni a los terminales de otros roles.
+              Registra las cuentas del personal. Sus permisos y accesos estarán determinados por el rol asignado. Los camareros, cocineros y baristas no tendrán acceso al panel de administración ni a los terminales de otros roles.
             </p>
 
             {/* Formulario Crear Usuario */}
@@ -2308,10 +2309,10 @@ export default function AdminView() {
                     required
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 outline-none focus:border-indigo-400 focus:bg-white"
                   >
-                    <option value="camarero">🤵 Camarero</option>
-                    <option value="cocina">🍳 Cocina</option>
-                    <option value="bar">🍹 Barra</option>
-                    <option value="admin">⚙️ Administrador</option>
+                    <option value="camarero">Camarero</option>
+                    <option value="cocina">Cocina</option>
+                    <option value="bar">Barra</option>
+                    <option value="admin">Administrador</option>
                   </select>
                 </div>
 
@@ -2626,7 +2627,7 @@ export default function AdminView() {
               className="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto"
             >
               <h3 className="font-extrabold text-slate-900 text-sm mb-2" id="import-modal-title">
-                📥 Importar Catálogo desde CSV
+                Importar Catálogo desde CSV
               </h3>
               <p className="text-[11px] text-slate-505 mb-4 leading-relaxed">
                 Puedes importar múltiples platos y categorías en lote utilizando un archivo CSV. Las categorías que no existan se crearán automáticamente.

@@ -522,17 +522,12 @@ export async function queuePrinterJob(order: Order, items: OrderLine[]) {
 
   console.log(`[Printer Queue] Procesando pedido ${order.id} para impresora ${config.ip}:${config.port} (enabled: ${config.enabled})`);
 
-  // Buscar el log de impresión ya creado (generado en POST /api/orders)
-  let log = dbInstance.getPrintLogs().find(l => l.orderId === order.id && l.status === "pending");
-  if (!log) {
-    // Si no existe aún, crear uno nuevo
-    log = dbInstance.addPrintLog({
-      orderId: order.id,
-      zpl,
-      status: "pending",
-      errorMessage: null
-    });
-  }
+  const log = dbInstance.addPrintLog({
+    orderId: order.id,
+    zpl,
+    status: "pending",
+    errorMessage: null
+  });
 
   if (!config.enabled) {
     dbInstance.updatePrintLog(log.id, {
@@ -651,6 +646,8 @@ function publicTable(table: any) {
   };
 }
 
+const DUMMY_HASH = hashPassword(crypto.randomBytes(16).toString("hex"));
+
 app.post("/api/auth/login", loginLimiter, (req, res) => {
   const username = requiredText(req.body?.username, 80);
   const password = typeof req.body?.password === "string" ? req.body.password : "";
@@ -659,7 +656,12 @@ app.post("/api/auth/login", loginLimiter, (req, res) => {
   }
 
   const foundUser = dbInstance.getUserByUsername(username);
-  if (!foundUser || !foundUser.passwordHash || !verifyPassword(password, foundUser.passwordHash)) {
+  if (!foundUser || !foundUser.passwordHash) {
+    // Mismo trabajo que con un usuario real, para no revelar por tiempo qué usuarios existen.
+    verifyPassword(password, DUMMY_HASH);
+    return res.status(401).json({ error: "Credenciales de acceso incorrectas" });
+  }
+  if (!verifyPassword(password, foundUser.passwordHash)) {
     return res.status(401).json({ error: "Credenciales de acceso incorrectas" });
   }
 
@@ -882,9 +884,12 @@ app.post("/api/categories", requireRole("admin"), (req: any, res) => {
 
 app.put("/api/categories/:id", requireRole("admin"), (req: any, res) => {
   const updates: any = {};
-  if (req.body?.name !== undefined) updates.name = requiredText(req.body.name, 80);
+  if (req.body?.name !== undefined) {
+    updates.name = requiredText(req.body.name, 80);
+    if (!updates.name) return res.status(400).json({ error: "El nombre no puede estar vacío" });
+  }
   if (req.body?.description !== undefined) updates.description = text(req.body.description, 240);
-  if (req.body?.icon !== undefined) updates.icon = requiredText(req.body.icon, 40);
+  if (req.body?.icon !== undefined) updates.icon = requiredText(req.body.icon, 40) || "Utensils";
   const updated = dbInstance.updateCategory(req.params.id, updates);
   if (!updated) return res.status(404).json({ error: "Categoría no encontrada" });
   dbInstance.logAudit({ actorId: req.user.sub, actorName: req.user.name, action: "update", entity: "category", entityId: req.params.id, details: { fields: Object.keys(updates) } });
@@ -906,6 +911,26 @@ app.get("/api/products", (req, res) => {
   res.json(dbInstance.getProducts());
 });
 
+function parseModifierGroups(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 12).map((group: any, groupIndex: number) => {
+    const options = (Array.isArray(group?.options) ? group.options : []).slice(0, 30)
+      .map((option: any, optionIndex: number) => ({
+        id: requiredText(option?.id, 80) || `opt-${groupIndex}-${optionIndex}`,
+        name: requiredText(option?.name, 80) || "",
+        price: decimal(option?.price, 0, 1000, 0)
+      }))
+      .filter((option: { name: string }) => option.name);
+    return {
+      id: requiredText(group?.id, 80) || `grp-${groupIndex}`,
+      name: requiredText(group?.name, 80) || "",
+      required: Boolean(group?.required),
+      maxSelections: integer(group?.maxSelections, 1, 30, 1),
+      options
+    };
+  }).filter((group) => group.name && group.options.length > 0);
+}
+
 function parseAllergens(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => text(item, 40).toLowerCase()).filter(Boolean).slice(0, 20);
@@ -916,6 +941,7 @@ app.post("/api/products", requireRole("admin"), (req: any, res) => {
   const name = requiredText(req.body?.name, 120);
   const price = decimal(req.body?.price, 0, 100000, -1);
   if (!categoryId || !name || price < 0) return res.status(400).json({ error: "Categoría, nombre y precio válido son obligatorios." });
+  if (!dbInstance.getCategories().some((category) => category.id === categoryId)) return res.status(400).json({ error: "La categoría indicada no existe." });
   const newProd = dbInstance.createProduct({
     id: `prod-${crypto.randomUUID()}`,
     categoryId,
@@ -927,7 +953,7 @@ app.post("/api/products", requireRole("admin"), (req: any, res) => {
     iva: integer(req.body?.iva, 0, 100, 10),
     available: req.body?.available !== false,
     stock: req.body?.stock === null || req.body?.stock === "" || req.body?.stock === undefined ? null : integer(req.body.stock, 0, 100000, 0),
-    modifierGroups: Array.isArray(req.body?.modifierGroups) ? req.body.modifierGroups : [],
+    modifierGroups: parseModifierGroups(req.body?.modifierGroups),
     station: isStation(req.body?.station) ? req.body.station : "cocina"
   });
   dbInstance.logAudit({ actorId: req.user.sub, actorName: req.user.name, action: "create", entity: "product", entityId: newProd.id, details: { name, price } });
@@ -936,8 +962,16 @@ app.post("/api/products", requireRole("admin"), (req: any, res) => {
 
 app.put("/api/products/:id", requireRole("admin"), (req: any, res) => {
   const updates: any = {};
-  if (req.body?.categoryId !== undefined) updates.categoryId = requiredText(req.body.categoryId, 80);
-  if (req.body?.name !== undefined) updates.name = requiredText(req.body.name, 120);
+  if (req.body?.categoryId !== undefined) {
+    updates.categoryId = requiredText(req.body.categoryId, 80);
+    if (!updates.categoryId || !dbInstance.getCategories().some((category) => category.id === updates.categoryId)) {
+      return res.status(400).json({ error: "La categoría indicada no existe." });
+    }
+  }
+  if (req.body?.name !== undefined) {
+    updates.name = requiredText(req.body.name, 120);
+    if (!updates.name) return res.status(400).json({ error: "El nombre no puede estar vacío" });
+  }
   if (req.body?.description !== undefined) updates.description = text(req.body.description, 500);
   if (req.body?.price !== undefined) updates.price = decimal(req.body.price, 0, 100000, 0);
   if (req.body?.image !== undefined) updates.image = text(req.body.image, 300);
@@ -945,7 +979,7 @@ app.put("/api/products/:id", requireRole("admin"), (req: any, res) => {
   if (req.body?.iva !== undefined) updates.iva = integer(req.body.iva, 0, 100, 10);
   if (req.body?.available !== undefined) updates.available = Boolean(req.body.available);
   if (req.body?.stock !== undefined) updates.stock = req.body.stock === null || req.body.stock === "" ? null : integer(req.body.stock, 0, 100000, 0);
-  if (req.body?.modifierGroups !== undefined) updates.modifierGroups = Array.isArray(req.body.modifierGroups) ? req.body.modifierGroups : [];
+  if (req.body?.modifierGroups !== undefined) updates.modifierGroups = parseModifierGroups(req.body.modifierGroups);
   if (req.body?.station !== undefined && isStation(req.body.station)) updates.station = req.body.station;
   const updated = dbInstance.updateProduct(req.params.id, updates);
   if (!updated) return res.status(404).json({ error: "Producto no encontrado" });
@@ -969,8 +1003,24 @@ app.post("/api/catalog/import", requireRole("admin"), (req: any, res) => {
   if (!["replace", "append"].includes(mode) || !Array.isArray(items)) {
     return res.status(400).json({ error: "Modo inválido o lista de platos ausente." });
   }
+  if (items.length > 2000) return res.status(400).json({ error: "Demasiados productos en una sola importación (máx. 2000)." });
+  const cleanItems = items.map((item: any) => {
+    const rawIva = Number(item?.iva);
+    return {
+      categoryName: text(item?.categoryName, 80),
+      name: text(item?.name, 120),
+      description: text(item?.description, 500),
+      price: decimal(item?.price, 0, 100000, 0),
+      image: text(item?.image, 300) || "default.jpg",
+      allergens: parseAllergens(item?.allergens),
+      iva: Number.isFinite(rawIva) && rawIva >= 0 && rawIva <= 100 ? Math.round(rawIva) : 10,
+      available: item?.available !== false && item?.available !== 0 && item?.available !== "false",
+      stock: item?.stock === null || item?.stock === undefined || item?.stock === "" ? null : integer(item.stock, 0, 100000, 0),
+      station: isStation(item?.station) ? item.station : undefined
+    };
+  });
   try {
-    const result = dbInstance.importCatalog(mode, items);
+    const result = dbInstance.importCatalog(mode, cleanItems);
     dbInstance.logAudit({ actorId: req.user.sub, actorName: req.user.name, action: "import", entity: "catalog", details: { mode, count: result.count } });
     res.json({ success: true, message: `Se han importado ${result.count} productos correctamente.` });
   } catch (error: any) {
@@ -1096,8 +1146,6 @@ app.post("/api/orders", orderLimiter, (req: any, res) => {
 
   const kitchenItems = processedLines.filter((line) => line.destination === "cocina");
   if (kitchenItems.length > 0) {
-    const zplPreview = generateZplTicket(createdOrder, kitchenItems);
-    dbInstance.addPrintLog({ orderId: createdOrder.id, zpl: zplPreview, status: "pending", errorMessage: null });
     queuePrinterJob(createdOrder, kitchenItems).catch((error) => console.error("[Printer] Error despachando comanda:", error));
   }
 
@@ -1129,10 +1177,29 @@ app.put("/api/orders/:id/status", requireStaff, (req: any, res) => {
     return res.status(403).json({ error: "Solo sala o administración pueden cancelar un pedido." });
   }
 
-  const updated = dbInstance.updateOrderStatus(req.params.id, status as OrderStatus, station);
+  const current = dbInstance.getOrderById(req.params.id);
+  if (!current) return res.status(404).json({ error: "Pedido no encontrado o ya cancelado" });
+  // Cocina y barra solo cambian sus propias líneas, y no pueden darlas por servidas en mesa.
+  const ownStation = req.user.role === "cocina" ? "cocina" : req.user.role === "bar" ? "bar" : null;
+  if (ownStation && station !== undefined && station !== ownStation) {
+    return res.status(403).json({ error: "No puedes cambiar el estado de otra estación." });
+  }
+  const effectiveStation = ownStation || station;
+  if (status === "cancelado") {
+    const table = dbInstance.getTableById(current.tableId);
+    if (!table || table.activeSessionId !== current.sessionId) {
+      return res.status(409).json({ error: "No se puede anular un pedido de una cuenta ya cerrada." });
+    }
+  }
+
+  const updated = dbInstance.updateOrderStatus(req.params.id, status as OrderStatus, effectiveStation);
   if (!updated) return res.status(404).json({ error: "Pedido no encontrado o ya cancelado" });
 
-  broadcastEvent("order:status_changed", { id: updated.id, status: updated.status, station: station || null });
+  broadcastEvent("order:status_changed", { id: updated.id, status: updated.status, station: effectiveStation || null });
+  if (status === "cancelado") {
+    broadcastEvent("tables_updated", { tableId: updated.tableId });
+    dbInstance.logAudit({ actorId: req.user.sub, actorName: req.user.name, action: "cancel", entity: "order", entityId: updated.id, details: { tableId: updated.tableId, total: updated.totalAmount } });
+  }
   if (status === "listo") {
     const table = dbInstance.getTableById(updated.tableId);
     if (table?.assignedWaiterId) {
@@ -1201,7 +1268,8 @@ app.get("/api/tables/:id/bill", (req: any, res) => {
     });
   });
 
-  const receipts = dbInstance.getClosedReceipts({ limit: 100 }).filter((receipt) => receipt.sessionId === table.activeSessionId);
+  const receipts = dbInstance.getClosedReceipts({ sessionId: table.activeSessionId, limit: 200 });
+  const money = dbInstance.getSessionMoney(table.id, table.activeSessionId);
 
   res.json({
     tableId: table.id,
@@ -1211,7 +1279,9 @@ app.get("/api/tables/:id/bill", (req: any, res) => {
     items: Object.values(consolidatedMap),
     subtotal: parseFloat(subtotal.toFixed(2)),
     taxAmount: parseFloat(taxAmount.toFixed(2)),
-    total: table.currentBillTotal !== null ? table.currentBillTotal : parseFloat(subtotal.toFixed(2)),
+    total: money.remaining,
+    sessionTotal: money.sessionTotal,
+    paidOnAccount: money.flatPaid,
     closedReceipts: receipts
   });
 });
@@ -1221,7 +1291,13 @@ app.post("/api/tables/:id/close", requireRole("admin", "camarero"), (req: any, r
   const splitMethod = ["completa", "partes_iguales", "por_lineas"].includes(req.body?.splitMethod) ? req.body.splitMethod : "completa";
   const paymentMethod = ["efectivo", "tarjeta", "bizum", "otro"].includes(req.body?.paymentMethod) ? req.body.paymentMethod : "efectivo";
   const tableId = req.params.id;
-  const closed = dbInstance.closeTableSession(tableId, customItems, splitMethod, { paymentMethod, closedBy: req.user.name });
+  const amount = req.body?.amount !== undefined ? decimal(req.body.amount, 0, 1000000, 0) : undefined;
+  let closed: ReturnType<typeof dbInstance.closeTableSession>;
+  try {
+    closed = dbInstance.closeTableSession(tableId, customItems, splitMethod, { paymentMethod, closedBy: req.user.name, amount });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || "No se pudo procesar el cobro." });
+  }
   
   if (closed) {
     // Auto-print ticket when bill is closed (only if there are items)
@@ -1333,17 +1409,18 @@ app.post("/api/tables/:id/print-ticket", requireRole("admin", "camarero"), (req,
 
 // 6c. REIMPRIMIR RECIBO (para tickets modificados)
 app.post("/api/print-receipt", requireRole("admin", "camarero"), (req, res) => {
-  const { tableName, items, subtotal, taxAmount, total, timestamp } = req.body;
-  if (!items || items.length === 0) {
+  const rawItems = Array.isArray(req.body?.items) ? req.body.items.slice(0, 200) : [];
+  if (rawItems.length === 0) {
     return res.status(400).json({ error: "No hay items para imprimir" });
   }
+  const parsedDate = new Date(typeof req.body?.timestamp === "string" ? req.body.timestamp : Date.now());
   queueTicketPrintJob({
-    tableName: tableName || "Mesa",
-    items: items.map((i: any) => ({ name: i.name, quantity: i.quantity, priceTotal: i.priceTotal })),
-    subtotal: subtotal || 0,
-    taxAmount: taxAmount || 0,
-    total: total || 0,
-    timestamp: timestamp || new Date().toISOString(),
+    tableName: text(req.body?.tableName, 60) || "Mesa",
+    items: rawItems.map((i: any) => ({ name: text(i?.name, 160) || "Artículo", quantity: integer(i?.quantity, 0, 999, 1), priceTotal: decimal(i?.priceTotal, -100000, 100000, 0) })),
+    subtotal: decimal(req.body?.subtotal, 0, 1000000, 0),
+    taxAmount: decimal(req.body?.taxAmount, 0, 1000000, 0),
+    total: decimal(req.body?.total, 0, 1000000, 0),
+    timestamp: Number.isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString(),
     title: "Reimpresion de Ticket"
   }).catch(err => console.error("Error reimprimiendo ticket:", err));
   res.json({ success: true, message: "Reimpresión enviada" });
@@ -1501,20 +1578,40 @@ app.get("/api/closed-receipts", requireRole("admin"), (req, res) => {
 });
 
 app.put("/api/closed-receipts/:id", requireRole("admin"), (req: any, res) => {
-  const before = dbInstance.getClosedReceipts({ limit: 5000 }).find((receipt) => receipt.id === req.params.id);
+  const before = dbInstance.getClosedReceiptById(req.params.id);
   if (!before) return res.status(404).json({ error: "Ticket no encontrado" });
   const updates: any = {};
   if (Array.isArray(req.body?.items)) {
-    updates.items = req.body.items.slice(0, 200).map((item: any) => ({
-      name: requiredText(item?.name, 160) || "Artículo",
-      quantity: integer(item?.quantity, 0, 999, 0),
-      priceUnit: decimal(item?.priceUnit, 0, 100000, 0),
-      priceTotal: decimal(item?.priceTotal, 0, 100000, 0)
-    }));
+    // Los totales se recalculan aquí a partir de las líneas: no se aceptan importes sueltos del cliente.
+    const taxBreakdown: Record<string, number> = {};
+    let total = 0;
+    let taxAmount = 0;
+    updates.items = req.body.items.slice(0, 200).map((item: any) => {
+      const quantity = integer(item?.quantity, 0, 999, 0);
+      const priceUnit = decimal(item?.priceUnit, -100000, 100000, 0);
+      const priceTotal = Math.round(priceUnit * quantity * 100) / 100;
+      const rawRate = Number(item?.taxRate);
+      const taxRate = Number.isFinite(rawRate) && rawRate >= 0 && rawRate <= 100 ? rawRate : 10;
+      const tax = taxFromGross(priceTotal, taxRate);
+      total += priceTotal;
+      taxAmount += tax;
+      taxBreakdown[String(taxRate)] = Math.round(((taxBreakdown[String(taxRate)] || 0) + tax) * 100) / 100;
+      return {
+        productId: requiredText(item?.productId, 80) || undefined,
+        name: requiredText(item?.name, 160) || "Artículo",
+        quantity,
+        priceUnit,
+        priceTotal,
+        taxRate,
+        notes: text(item?.notes, 240),
+        selectedExtras: Array.isArray(item?.selectedExtras) ? item.selectedExtras.slice(0, 30) : []
+      };
+    }).filter((item: { quantity: number }) => item.quantity > 0);
+    updates.total = Math.max(0, Math.round(total * 100) / 100);
+    updates.subtotal = updates.total;
+    updates.taxAmount = Math.max(0, Math.round(taxAmount * 100) / 100);
+    updates.taxBreakdown = taxBreakdown;
   }
-  if (req.body?.subtotal !== undefined) updates.subtotal = decimal(req.body.subtotal, 0, 100000, before.subtotal);
-  if (req.body?.taxAmount !== undefined) updates.taxAmount = decimal(req.body.taxAmount, 0, 100000, before.taxAmount);
-  if (req.body?.total !== undefined) updates.total = decimal(req.body.total, 0, 100000, before.total);
   if (["efectivo", "tarjeta", "bizum", "otro"].includes(req.body?.paymentMethod)) updates.paymentMethod = req.body.paymentMethod;
   const updated = dbInstance.updateClosedReceipt(req.params.id, updates);
   dbInstance.logAudit({

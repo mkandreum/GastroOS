@@ -4,8 +4,8 @@
   "description": "Gestión de pedidos, sala, cocina, barra y cobro para restaurantes.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F6F1E8",
-  "theme_color": "#171512",
+  "background_color": "#0A090D",
+  "theme_color": "#0A090D",
   "icons": [
     {
       "src": "/icon.svg",

@@ -160,7 +160,7 @@ export default function ChefView() {
   useEffect(() => {
     const pending = orders.filter(o => o.status === "pendiente").length;
     if (pending > prevPendingCount && prevPendingCount > 0) {
-      setPushBanner(`🔥 Nueva comanda entrante (${pending} pendientes)`);
+      setPushBanner(`Nueva comanda entrante (${pending} pendientes)`);
       setTimeout(() => setPushBanner(null), 4000);
     }
     setPrevPendingCount(pending);
@@ -266,7 +266,7 @@ export default function ChefView() {
             isHighContrast ? "text-yellow-400 border border-yellow-400 bg-black" : "text-rose-500 bg-rose-500/10"
           }`}>KDS - Kitchen Display System</span>
           <h1 className="text-2xl font-black tracking-tight text-white mt-1.5 flex items-center col-span-2">
-            <span>🍳 Terminal de Preparación de Cocina</span>
+            <span>Terminal de Preparación de Cocina</span>
           </h1>
         </div>
         <div className="flex items-center space-x-3 mt-3 md:mt-0">
@@ -279,7 +279,7 @@ export default function ChefView() {
                 : "bg-slate-800 text-white border-slate-700 hover:bg-slate-700"
             }`}
           >
-            🌓 {isHighContrast ? "Contraste Estándar" : "Alto Contraste"}
+            {isHighContrast ? "Contraste Estándar" : "Alto Contraste"}
           </button>
           <button
             onClick={toggleFullscreen}
@@ -289,7 +289,7 @@ export default function ChefView() {
                 : "bg-slate-800 text-white border-slate-700 hover:bg-slate-700"
             }`}
           >
-            🖥️ {isFullscreen ? "Salir Completo" : "Pantalla Completa"}
+            {isFullscreen ? "Salir Completo" : "Pantalla Completa"}
           </button>
           
           <span className={`text-xs border rounded-lg px-3 py-1.5 font-bold ${
@@ -308,7 +308,7 @@ export default function ChefView() {
         {/* COLUMNA 1: PENDIENTES DE ENTRAR (Rojo/Amber) */}
         <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
           <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-            <span>🔴 1. Por Preparar ({pendingOrders.length})</span>
+            <span>1. Por Preparar ({pendingOrders.length})</span>
             <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">FUEGO</span>
           </h2>
 
@@ -391,7 +391,7 @@ export default function ChefView() {
 
                           {line.notes && (
                             <div className="mt-1 bg-amber-500/10 border border-amber-500/20 text-amber-300 p-1.5 rounded text-xs">
-                              📝 "{line.notes}"
+                              "{line.notes}"
                             </div>
                           )}
                         </div>
@@ -421,7 +421,7 @@ export default function ChefView() {
         {/* COLUMNA 2: EN FUEGO / SE ESTÁ PREPARANDO (Indigo/Orange) */}
         <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
           <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-            <span>🟡 2. En los Fogones ({cookingOrders.length})</span>
+            <span>2. En los Fogones ({cookingOrders.length})</span>
             <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">MARCHANDO</span>
           </h2>
 
@@ -492,7 +492,7 @@ export default function ChefView() {
 
                           {line.notes && (
                             <div className="mt-1 bg-amber-500/10 border border-amber-500/20 text-amber-300 p-1.5 rounded text-xs">
-                              📝 "{line.notes}"
+                              "{line.notes}"
                             </div>
                           )}
                         </div>
@@ -522,7 +522,7 @@ export default function ChefView() {
         {/* COLUMNA 3: PREPARADOS/ESPERANDO SERVICIO (Verde/Gray) */}
         <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
           <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-            <span>🟢 3. Listos en pase ({readyOrders.length})</span>
+            <span>3. Listos en pase ({readyOrders.length})</span>
             <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">PASE</span>
           </h2>
 
@@ -598,7 +598,7 @@ export default function ChefView() {
             >
               <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
                 <div>
-                  <h3 className="font-extrabold text-sm text-white" id="zpl-modal-title">📄 Código de Impresión ZPL (Zebra)</h3>
+                  <h3 className="font-extrabold text-sm text-white" id="zpl-modal-title">Código de Impresión ZPL (Zebra)</h3>
                   <p className="text-[10px] text-slate-400">Comando crudo enviado a la cola de impresión de la comanda</p>
                 </div>
                 <button 

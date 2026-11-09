@@ -9,8 +9,9 @@ import {
 } from "motion/react";
 import {
   Utensils, Beef, GlassWater, IceCream, ShoppingBag, Info,
-  Check, X, ListTodo, AlertTriangle, QrCode, Soup, Salad, Wheat, CakeSlice, Wine, Trash2, Loader2
+  Check, X, ListTodo, AlertTriangle, QrCode, Soup, Salad, Wheat, Trash2, Loader2, Search, Plus, BellRing, ReceiptText
 } from "lucide-react";
+import LiquidBar from "./LiquidBar";
 import { useToast } from "./ToastProvider";
 import { useFocusTrap } from "./useFocusTrap";
 import { Category, Product, ModifierGroup, ModifierOption, SelectedModifier, Table } from "../types";
@@ -51,7 +52,8 @@ const fuzzyMatch = (text: string, query: string): boolean => {
   
   return queryWords.every(qWord => {
     return textWords.some(tWord => {
-      if (tWord.includes(qWord) || qWord.includes(tWord)) return true;
+      if (tWord.includes(qWord)) return true;
+      if (tWord.length >= 4 && qWord.includes(tWord)) return true;
       if (Math.abs(tWord.length - qWord.length) <= 1) {
         let diffs = 0;
         let i = 0, j = 0;
@@ -78,20 +80,52 @@ interface ClientViewProps {
   tableToken?: string | null;
   onUnlockRoles?: () => void;
   isKioskMode?: boolean;
+  /** Hay una barra de navegación global debajo (vista previa del personal). */
+  hasGlobalNav?: boolean;
 }
 
-export default function ClientView({ tableNumber, tableToken = null, onUnlockRoles, isKioskMode = false }: ClientViewProps) {
+interface CartItem {
+  product: Product;
+  quantity: number;
+  notes: string;
+  selectedExtras: SelectedModifier[];
+  uniqueId: string;
+}
+
+function readCart(key: string): CartItem[] {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(key) || "[]");
+    return Array.isArray(saved) ? saved.filter((item) => item?.product?.id && item.quantity > 0 && item.uniqueId) : [];
+  } catch {
+    return [];
+  }
+}
+
+const STATUS_COPY: Record<string, { label: string; tone: string; progress: string }> = {
+  pendiente: { label: "Recibido", tone: "bg-amber-100 text-amber-700", progress: "w-[25%] bg-amber-500" },
+  en_preparacion: { label: "En preparación", tone: "bg-indigo-100 text-indigo-700", progress: "w-[60%] bg-indigo-500" },
+  listo: { label: "Listo, va para tu mesa", tone: "bg-emerald-100 text-emerald-800", progress: "w-[90%] bg-emerald-500" },
+  servido: { label: "Servido", tone: "bg-slate-100 text-slate-500", progress: "w-full bg-slate-400" },
+  cancelado: { label: "Anulado", tone: "bg-red-100 text-red-600", progress: "w-0" }
+};
+
+export default function ClientView({ tableNumber, tableToken = null, onUnlockRoles, isKioskMode = false, hasGlobalNav = false }: ClientViewProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [tableInfo, setTableInfo] = useState<Table | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("cat-1");
-  const [cart, setCart] = useState<Array<{
-    product: Product;
-    quantity: number;
-    notes: string;
-    selectedExtras: SelectedModifier[];
-    uniqueId: string;
-  }>>([]);
+  // La cesta se guarda por mesa en la sesión del navegador: sobrevive a una recarga accidental.
+  const cartKey = `gastro_cart_${tableNumber ?? "sin-mesa"}`;
+  const [cart, setCart] = useState<CartItem[]>(() => readCart(cartKey));
+  const cartKeyRef = React.useRef(cartKey);
+  useEffect(() => {
+    if (cartKeyRef.current !== cartKey) {
+      cartKeyRef.current = cartKey;
+      setCart(readCart(cartKey));
+      return;
+    }
+    try { sessionStorage.setItem(cartKey, JSON.stringify(cart)); } catch { /* almacenamiento no disponible */ }
+  }, [cart, cartKey]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"menu" | "orders">("menu");
   const [myOrders, setMyOrders] = useState<any[]>([]);
@@ -137,7 +171,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
         body: JSON.stringify({ tableId: `table-${tableNumber}`, reason })
       });
       if (res.ok) {
-        toast("🛎️ Camarero avisado. ¡Enseguida irá a tu mesa!", "success");
+        toast("Camarero avisado. Enseguida va a tu mesa.", "success");
         setIsCallWaiterModalOpen(false);
       } else {
         toast("No se pudo avisar al camarero. Inténtalo de nuevo.", "error");
@@ -275,6 +309,12 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
         const prodData: Product[] = await resProd.json();
         setCategories(catData);
         setProducts(prodData);
+        setCart((prev) => prev
+          .map((item) => {
+            const fresh = prodData.find((product) => product.id === item.product.id && product.available);
+            return fresh ? { ...item, product: fresh } : null;
+          })
+          .filter(Boolean) as typeof prev);
         const hasProducts = (category: Category) => prodData.some((product) => product.categoryId === category.id && product.available);
         const preferred = catData.find((category) => /entrante/i.test(category.name) && hasProducts(category)) || catData.find(hasProducts);
         if (preferred) setSelectedCategory(preferred.id);
@@ -311,6 +351,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       console.error(err); toast("Error al consultar tus pedidos.", "error");
     }
   };
+
+  const activeOrdersCount = myOrders.filter((order) => order.status !== "servido" && order.status !== "cancelado").length;
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const getCategoryIcon = (iconName?: string, name?: string) => {
     switch (iconName) {
@@ -365,8 +408,8 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       }
       return [...prev, { product, quantity: 1, notes, selectedExtras: extras, uniqueId }];
     });
+    // Sin aviso emergente: la cesta flotante ya rebota y actualiza el total.
     setCartTrigger(prev => prev + 1);
-    toast(`"${product.name}" añadido`, "success");
   };
 
   const confirmExtrasAndAdd = () => {
@@ -452,7 +495,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
 
       if (res.ok) {
         setCart([]);
-        toast("✅ Pedido enviado a cocina/barra correctamente.", "success");
+        toast("Pedido enviado. Ya lo están preparando.", "success");
         setIsCartOpen(false);
         setActiveTab("orders");
         fetchMyOrders();
@@ -502,391 +545,333 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
   }, [cart]);
 
   return (
-    <div className={`client-dark flex flex-col min-h-screen font-sans pb-24 sm:pb-4 ${cart.length > 0 ? 'pb-36 sm:pb-20' : ''}`} id="client_root">
-      
+    <div className={`flex flex-col min-h-screen font-sans ${cart.length > 0 && activeTab === "menu" ? "pb-48" : "pb-28"}`} id="client_root">
 
-
-      {/* HEADER CLIENTE */}
-      <header className="sticky top-0 z-30 bg-black border-b-4 border-[#FFD400] px-4 py-3 flex justify-between items-center">
-        <div className="min-w-0 flex-1 pr-2">
-          <span className="text-[10px] font-mono text-[#FFD400] font-bold tracking-[0.2em] block uppercase">
-            {tableNumber ? "Pedidos Mesa QR" : "Carta Online"}
-          </span>
-          <h1 className="font-display text-2xl sm:text-3xl uppercase text-white tracking-wide flex items-center truncate">
-            📍 {tableInfo ? tableInfo.name : tableNumber ? `Mesa ${tableNumber}` : "Carta Digital (Consulta)"}
+      {/* CABECERA */}
+      <header className="cv-header sticky top-0 z-30 px-4 py-3 flex justify-between items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="cv-eyebrow block">{tableNumber ? "Tu mesa" : "Solo consulta"}</span>
+          <h1 className="text-xl sm:text-2xl text-white truncate">
+            {tableInfo ? tableInfo.name : tableNumber ? `Mesa ${tableNumber}` : "Carta digital"}
           </h1>
         </div>
-        <div className="flex items-center space-x-1.5 shrink-0">
-          {tableNumber && (
-            <button 
+        <div className="flex items-center gap-2 shrink-0">
+          {hasGlobalNav && (
+            <div className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10" role="tablist" aria-label="Secciones">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "menu"}
+                onClick={() => setActiveTab("menu")}
+                className={`px-3.5 h-9 rounded-full text-xs font-bold cursor-pointer ${activeTab === "menu" ? "bg-ink text-black" : "text-white/70 hover:text-white"}`}
+                id="tab_client_menu"
+              >
+                Carta
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "orders"}
+                onClick={() => { setActiveTab("orders"); fetchMyOrders(); }}
+                className={`px-3.5 h-9 rounded-full text-xs font-bold cursor-pointer ${activeTab === "orders" ? "bg-ink text-black" : "text-white/70 hover:text-white"}`}
+                id="tab_client_orders"
+              >
+                Pedidos{activeOrdersCount > 0 ? ` · ${activeOrdersCount}` : ""}
+              </button>
+            </div>
+          )}
+          {tableNumber && hasGlobalNav && (
+            <button
               type="button"
               onClick={() => setIsCallWaiterModalOpen(true)}
-              className="px-3.5 py-2 bg-[#FFD400] hover:bg-white border border-amber-400 text-black font-bold rounded-full transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] space-x-1 shadow-sm"
-              title="Llamar al Camarero"
+              className="h-11 px-4 rounded-full bg-accent text-black text-xs font-extrabold flex items-center gap-2 cursor-pointer hover:bg-accent-soft"
             >
-              <span>🛎️</span>
-              <span className="hidden sm:inline text-xs font-black">Llamar</span>
+              <BellRing className="w-4 h-4" />
+              <span className="hidden sm:inline">Llamar</span>
             </button>
           )}
-
-          <button 
+          <button
             type="button"
             onClick={() => setIsScannerOpen(true)}
-            className="p-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-full transition cursor-pointer flex items-center justify-center shrink-0 min-h-[38px] min-w-[38px]"
-            title="Escanear QR de Mesa"
+            className="w-11 h-11 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white cursor-pointer"
+            aria-label="Escanear el QR de la mesa"
+            title="Escanear el QR de la mesa"
           >
             <QrCode className="w-5 h-5" />
           </button>
-
-          <div className="hidden sm:flex items-center space-x-1.5 shrink-0">
-          <button 
-            type="button"
-            onClick={() => setActiveTab("menu")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition min-h-[38px] ${
-              activeTab === "menu" ? "bg-[#FFD400] text-black" : "bg-white/10 hover:bg-white/20 text-white"
-            }`}
-            id="tab_client_menu"
-          >
-            Carta
-          </button>
-          
-          <button 
-            type="button"
-            onClick={() => {
-              setActiveTab("orders");
-              fetchMyOrders();
-            }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold relative transition min-h-[38px] ${
-              activeTab === "orders" ? "bg-[#FFD400] text-black" : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-            id="tab_client_orders"
-          >
-            Pedidos
-            {myOrders.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-xs">
-                {myOrders.length}
-              </span>
-            )}
-          </button>
-        </div>
         </div>
       </header>
 
-      {/* VISTA PRINCIPAL: CARTA */}
+      {/* CARTA */}
       {activeTab === "menu" && (
         <div className="flex-1 flex flex-col">
-          {/* HERO */}
-          <section className="px-4 pt-6 pb-8 overflow-hidden" aria-hidden="true">
-            <p className="font-mono text-[11px] font-bold tracking-[0.3em] text-white/70 uppercase">Hoy se come</p>
-            <h2 className="hero-title">La<br />Carta</h2>
+          <section className="px-4 sm:px-8 pt-8 pb-7 max-w-6xl mx-auto w-full" aria-hidden="true">
+            <p className="cv-eyebrow mb-3">Hoy se come</p>
+            <h2 className="cv-hero-title">La <em>carta</em></h2>
           </section>
-          <div className="marquee" aria-hidden="true">
-            <div className="marquee-track">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <span key={i}>Pide desde tu mesa ✦ Sin esperas ✦ Directo a cocina ✦</span>
+          <div className="cv-ticker" aria-hidden="true">
+            <div className="cv-ticker-track">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <React.Fragment key={i}>
+                  <span>Pide desde tu mesa</span><b>sin esperas</b><span>Directo a cocina</span><b>paga al final</b>
+                </React.Fragment>
               ))}
             </div>
           </div>
 
-          {/* BUSCADOR FUZZY */}
-          <div className="bg-black px-4 pt-3 pb-1.5 sticky top-[61px] z-20">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs">🔍</span>
-              <input
-                type="text"
-                placeholder="Busca platos... (ej. hamburguesa, tarta, patatas)"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-white/10 border border-white/10 rounded-full pl-9 pr-8 py-2.5 text-xs text-white placeholder:text-white/40 outline-none transition"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 text-xs font-bold"
-                >
-                  ✕
-                </button>
-              )}
+          {/* BUSCADOR + CATEGORÍAS */}
+          <div className="cv-header sticky top-[68px] z-20 border-t-0">
+            <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 pt-3">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none" />
+                <input
+                  type="search"
+                  placeholder="Busca un plato o una bebida"
+                  aria-label="Buscar en la carta"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full h-12 bg-white/5 border border-white/10 !rounded-full pl-11 pr-11 text-sm text-white"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center rounded-full text-white/60 hover:text-white cursor-pointer"
+                    aria-label="Borrar búsqueda"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-
-          {/* CATEGORÍAS CIRCULARES */}
-          <section className="bg-black py-2 border-b border-white/10 sticky top-[110px] z-20 relative">
-            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-black to-transparent pointer-events-none z-10" />
-
-            <div className="flex space-x-4 overflow-x-auto px-6 py-1.5 scrollbar-none snap-x">
+            <div className="max-w-6xl mx-auto w-full flex gap-2 overflow-x-auto px-4 sm:px-8 py-3 scrollbar-none">
               {categories.map(cat => {
                 const isActive = selectedCategory === cat.id && !searchQuery;
                 return (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                  <button
+                    type="button"
                     key={cat.id}
                     onClick={() => {
                       setSelectedCategory(cat.id);
-                      setSearchQuery(""); // Reset search when clicking category
+                      setSearchQuery("");
                     }}
-                    className="flex flex-col items-center space-y-1.5 snap-start focus:outline-none min-w-[72px] cursor-pointer"
+                    className="cv-chip"
+                    aria-pressed={isActive}
                     id={`btn_cat_${cat.id}`}
-                    aria-label={`Categoría ${cat.name}`}
                   >
-                    <div className={`w-12 h-12 rounded-md flex items-center justify-center transition-all duration-200 ${
-                      isActive 
-                        ? "bg-[#FFD400] text-black border-2 border-white shadow-[3px_3px_0_#fff] scale-105" 
-                        : "bg-white/10 border border-white/10 text-white/70 hover:bg-white/20"
-                    }`}>
-                      {getCategoryIcon(cat.icon, cat.name)}
-                    </div>
-                    <span className={`text-[10px] font-black uppercase tracking-wider text-center ${
-                      isActive ? "text-[#FFD400] font-extrabold" : "text-white/50 font-bold"
-                    }`}>
-                      {cat.name}
-                    </span>
-                  </motion.button>
+                    {getCategoryIcon(cat.icon, cat.name)}
+                    {cat.name}
+                  </button>
                 );
               })}
             </div>
-          </section>
+          </div>
 
-          {/* MODO CONSULTA / SIN MESA */}
-          {!tableNumber && (
-            <div className="mx-4 mt-3 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex flex-col gap-3 shadow-xs">
-              <div className="flex items-start space-x-2.5">
-                <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+          <div className="max-w-6xl mx-auto w-full px-4 sm:px-8">
+            {!tableNumber && (
+              <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-3xl flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-white">Estás viendo la carta sin mesa</p>
+                    <p className="text-xs text-white/70 mt-1 leading-relaxed">
+                      Para pedir o llamar al camarero, escanea el QR que hay en tu mesa.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsScannerOpen(true)}
+                  className="h-11 px-5 rounded-full bg-accent text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-accent-soft"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Escanear QR</span>
+                </button>
+              </div>
+            )}
+
+            {tableNumber && !tableToken && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-3xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-extrabold text-indigo-900 uppercase tracking-wider">Modo Solo Consulta</p>
-                  <p className="text-[11px] text-indigo-750 mt-1 leading-relaxed">
-                    Estás viendo la carta digital. Para poder realizar pedidos, llamar al camarero o pagar tu cuenta, escanea el código QR físico de tu mesa.
-                  </p>
+                  <p className="text-sm font-bold text-white">Falta validar la mesa</p>
+                  <p className="text-xs text-white/70 mt-1 leading-relaxed">Puedes ver la carta, pero para pedir tienes que escanear el QR físico de la mesa.</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsScannerOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 transition"
-              >
-                <QrCode className="w-4 h-4" />
-                <span>Escanear QR de Mesa</span>
-              </button>
-            </div>
-          )}
+            )}
 
-          {/* MENSAJE DE MESA OCUPADA */}
-          {tableInfo && tableInfo.status === "pendiente_pago" && (
-            <div className="mx-4 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-amber-800">Mesa pendiente de cobro</p>
-                <p className="text-[11px] text-amber-600 mt-0.5">La cuenta está lista para abonar. Todavía puedes añadir platos adicionales si lo deseas.</p>
+            {tableInfo && tableInfo.status === "pendiente_pago" && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-3xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-white">La cuenta ya está pedida</p>
+                  <p className="text-xs text-white/70 mt-1">Si quieres algo más, puedes seguir pidiendo: se añade a la misma cuenta.</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* PRODUCTOS LIST */}
-          <motion.main 
-            key={selectedCategory}
+          {/* PRODUCTOS */}
+          <motion.main
+            key={searchQuery ? "search" : selectedCategory}
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="p-3.5 sm:p-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 content-start"
+            className="px-4 sm:px-8 py-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 content-start"
           >
             {menuLoading ? (
-              <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-semibold text-ink-muted">
+              <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-semibold text-ink-muted" role="status">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Cargando carta
+                Cargando la carta
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-slate-500">
-                <p className="text-sm">No hay productos disponibles en esta categoría.</p>
+              <div className="col-span-full text-center py-16 text-white/60">
+                <p className="text-sm">
+                  {searchQuery ? `No hay nada en la carta que coincida con «${searchQuery}».` : "Ahora mismo no hay nada disponible en esta categoría."}
+                </p>
               </div>
             ) : (
               filteredProducts.map(p => {
                 const inCartQty = cartQtyMap[p.id] || 0;
+                const hasOptions = Boolean(p.modifierGroups && p.modifierGroups.length > 0);
+                const soldOut = p.stock !== null && p.stock <= 0;
                 return (
-                <motion.div
+                <motion.article
                   variants={itemVariants}
                   key={p.id}
-                  className={`brutal-card group relative overflow-hidden flex flex-col ${inCartQty > 0 ? "in-cart" : ""}`}
+                  className="cv-card"
+                  data-in-cart={inCartQty > 0 || undefined}
                   id={`product_card_${p.id}`}
                 >
-                  <div className="relative aspect-[4/3] bg-[#FFD400] border-b-[3px] border-inherit flex items-center justify-center text-black overflow-hidden [&>svg]:w-16 [&>svg]:h-16">
+                  <div className="cv-card-media">
                     {p.image && p.image !== "default.jpg" ? (
-                      <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" />
+                      <img src={p.image} alt="" loading="lazy" />
                     ) : (
                       getCategoryIcon(categories.find((category) => category.id === p.categoryId)?.icon, p.name)
                     )}
-                    <span className="absolute top-0 left-0 bg-black text-[#FFD400] font-display text-3xl sm:text-4xl leading-none px-3 py-1.5">
-                      {p.price.toFixed(2)}€
-                    </span>
-                    {inCartQty > 0 && (
-                      <span className="absolute top-2 right-2 min-w-8 h-8 px-2 bg-black text-[#FFD400] text-sm font-black rounded-full flex items-center justify-center">{inCartQty}</span>
-                    )}
+                    {inCartQty > 0 && <span className="cv-qty" aria-label={`${inCartQty} en la cesta`}>{inCartQty}</span>}
                   </div>
 
-                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 sm:p-4 gap-3">
                     <div>
-                      <h3 className="font-display text-2xl sm:text-3xl uppercase leading-[0.95]">{p.name}</h3>
-                      <p className={`text-xs line-clamp-2 mt-2 leading-relaxed ${inCartQty > 0 ? "text-black/70" : "text-white/60"}`}>
-                        {p.description}
-                      </p>
-
+                      <h3 className="text-[17px] sm:text-xl leading-[1.05] text-white">{p.name}</h3>
+                      {p.description && (
+                        <p className="text-xs line-clamp-2 mt-1.5 leading-relaxed text-white/60">{p.description}</p>
+                      )}
                       {p.allergens && p.allergens.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
+                        <div className="flex flex-wrap gap-1 mt-2.5" aria-label="Alérgenos">
                           {p.allergens.map(al => (
-                            <span
-                              key={al}
-                              className={`inline-flex items-center text-[10px] px-1.5 py-0.5 border font-bold uppercase ${inCartQty > 0 ? "border-black text-black" : "border-white/60 text-white"}`}
-                              title={al}
-                            >
-                              {getAllergenEmoji(al)} {al}
+                            <span key={al} className="cv-allergen">
+                              <span aria-hidden="true">{getAllergenEmoji(al)}</span> {al.replace(/_/g, " ")}
                             </span>
                           ))}
                         </div>
                       )}
+                      {p.stock !== null && p.stock > 0 && p.stock <= 5 && (
+                        <p className="text-[11px] font-bold text-violet-400 mt-2">Solo quedan {p.stock}</p>
+                      )}
                     </div>
 
-                    <div className="flex justify-between items-center mt-4 gap-2">
-                      <span className="text-[10px] truncate min-w-0 font-bold uppercase">
-                        {p.stock !== null ? (
-                          p.stock <= 5 ? (
-                            <span className="text-red-500">¡Sólo {p.stock}!</span>
-                          ) : (
-                            <span className="opacity-60">Quedan {p.stock}</span>
-                          )
-                        ) : (
-                          <span className="opacity-60">Disponible</span>
-                        )}
-                      </span>
-
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="cv-price">{p.price.toFixed(2).replace(".", ",")}<small>€</small></span>
                       <button
+                        type="button"
+                        disabled={soldOut}
                         onClick={(e) => {
                           triggerFlyParticle(e);
                           handleAddToCart(p);
                         }}
-                        className="brutal-btn text-lg px-4 py-1.5 cursor-pointer shrink-0"
+                        className="cv-add disabled:opacity-40 disabled:cursor-not-allowed"
                         id={`btn_add_${p.id}`}
+                        aria-label={`${hasOptions ? "Elegir opciones de" : "Añadir"} ${p.name}`}
                       >
-                        {inCartQty > 0 ? "Otro +1" : "Pedir"}{p.modifierGroups && p.modifierGroups.length > 0 ? " +" : ""}
+                        {soldOut ? "Agotado" : <><Plus />{hasOptions ? "Elegir" : "Añadir"}</>}
                       </button>
                     </div>
                   </div>
-                </motion.div>
+                </motion.article>
               );})
             )}
           </motion.main>
         </div>
       )}
 
-      {/* VISTA PRINCIPAL: MIS PEDIDOS (LOGS) */}
+      {/* MIS PEDIDOS */}
       {activeTab === "orders" && (
-        <main className="p-4 max-w-3xl mx-auto w-full flex-1">
-          <h2 className="text-base font-extrabold tracking-tight text-slate-800 mb-3 flex items-center space-x-1.5">
-            <ListTodo className="w-5 h-5 text-indigo-600" />
-            <span>Seguimiento de Comandas</span>
-          </h2>
-          
-          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-            Aquí puedes ver las comandas solicitadas en tu sesión actual. El chef las recibe en cocina de manera inmediata.
-          </p>
+        <main className="px-4 sm:px-8 pt-8 max-w-3xl mx-auto w-full flex-1">
+          <p className="cv-eyebrow mb-2">En esta mesa</p>
+          <h2 className="text-4xl sm:text-5xl text-white mb-6">Tus pedidos</h2>
 
-          {!tableNumber ? (
-            <div className="bg-white rounded-xl border border-slate-100 p-8 text-center" id="empty_orders_state">
-              <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-xs font-semibold text-slate-500">Debes escanear el código QR de tu mesa para realizar y ver tus pedidos.</p>
-              <button 
+          {tableNumber && tableInfo && tableInfo.currentBillTotal > 0 && (
+            <div className="glass-panel rounded-3xl p-5 mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs text-white/60">Llevas en la cuenta</p>
+                <p className="cv-price !text-4xl mt-1">{tableInfo.currentBillTotal.toFixed(2).replace(".", ",")}<small>€</small></p>
+              </div>
+              <button
                 type="button"
-                onClick={() => setActiveTab("menu")}
-                className="mt-4 bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-indigo-600 transition"
+                disabled={callingWaiter}
+                onClick={() => handleCallWaiter("cuenta")}
+                className="h-12 px-5 rounded-full bg-ink text-black font-extrabold text-sm flex items-center gap-2 cursor-pointer hover:bg-accent disabled:opacity-60"
               >
-                Volver a la carta
+                <ReceiptText className="w-4 h-4" />
+                Pedir la cuenta
               </button>
             </div>
-          ) : myOrders.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-100 p-8 text-center" id="empty_orders_state">
+          )}
+
+          {!tableNumber || myOrders.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-100 p-8 text-center" id="empty_orders_state">
               <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-xs font-semibold text-slate-500">Aún no has hecho ningún pedido</p>
-              <button 
+              <p className="text-sm font-semibold text-slate-600">
+                {!tableNumber ? "Escanea el QR de tu mesa para pedir y seguir tus pedidos." : "Todavía no has pedido nada."}
+              </p>
+              <button
                 type="button"
                 onClick={() => setActiveTab("menu")}
-                className="mt-4 bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-indigo-600 transition"
+                className="mt-5 h-11 px-5 rounded-full bg-accent text-black text-sm font-extrabold cursor-pointer hover:bg-accent-soft"
               >
-                Ver carta para pedir
+                Ver la carta
               </button>
             </div>
           ) : (
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="space-y-4"
-            >
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
               {myOrders.map((order) => {
-                const isCompleted = order.status === "servido";
-                const isCancelled = order.status === "cancelado";
-                const isCooking = order.status === "en_preparacion";
-                const isReady = order.status === "listo";
-                const isPending = order.status === "pendiente";
-
+                const status = STATUS_COPY[order.status] || STATUS_COPY.pendiente;
                 return (
-                  <motion.div 
+                  <motion.div
                     layout
                     variants={itemVariants}
-                    key={order.id} 
-                    className="bg-white p-4 rounded-xl border border-slate-100 shadow-xs"
+                    key={order.id}
+                    className="bg-white p-4 rounded-3xl border border-slate-100"
                     id={`order_history_card_${order.id}`}
                   >
-                    <div className="flex justify-between items-start border-b border-slate-50 pb-2 mb-2">
-                      <div>
-                        <span className="text-[10px] font-mono text-slate-500">ID: #{order.id.slice(-6).toUpperCase()}</span>
-                        <p className="text-xs text-slate-500">{new Date(order.timestamp).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</p>
-                      </div>
-
-                      {/* Estado visual Badge */}
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${
-                        isPending ? "bg-amber-100 text-amber-700" :
-                        isCooking ? "bg-indigo-100 text-indigo-700 animate-pulse" :
-                        isReady ? "bg-emerald-100 text-emerald-800 animate-bounce" :
-                        isCompleted ? "bg-slate-100 text-slate-500" : "bg-red-100 text-red-600"
-                      }`}>
-                        {isPending && "⚙️ Pendiente"}
-                        {isCooking && "🔥 En preparación"}
-                        {isReady && "🔔 Listo para servir"}
-                        {isCompleted && "✓ Servido"}
-                        {isCancelled && "✗ Cancelado"}
+                    <div className="flex justify-between items-center gap-3 mb-3">
+                      <span className="font-mono text-[11px] text-slate-500">
+                        {new Date(order.timestamp).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · #{order.id.slice(-4).toUpperCase()}
                       </span>
+                      <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${status.tone}`}>{status.label}</span>
                     </div>
 
-                    {/* Platos */}
-                    <div className="space-y-1.5 py-1">
+                    <div className="space-y-1.5">
                       {order.items.map((line: any) => (
-                        <div key={line.id} className="flex justify-between items-baseline text-xs text-slate-700">
-                          <span className="font-medium">
-                            {line.quantity}x {line.name}
+                        <div key={line.id} className="flex justify-between items-baseline gap-3 text-sm text-slate-700">
+                          <span className="font-medium min-w-0">
+                            {line.quantity} × {line.name}
                             {line.selectedExtras && line.selectedExtras.length > 0 && (
-                              <span className="block text-[10px] text-slate-500 italic">
-                                (+ {line.selectedExtras.map((e: any) => e.optionName).join(", ")})
+                              <span className="block text-xs text-slate-500">
+                                {line.selectedExtras.map((e: any) => e.optionName).join(", ")}
                               </span>
                             )}
                           </span>
-                          <span className="font-extrabold text-slate-900 shrink-0">{line.priceTotal.toFixed(2)}€</span>
+                          <span className="font-bold text-slate-900 shrink-0 tabular-nums">{line.priceTotal.toFixed(2)} €</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Total y barra de progreso */}
-                    <div className="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
-                      <span className="text-xs font-semibold text-slate-500">Total del pedido</span>
-                      <span className="text-sm font-black text-indigo-600">{order.totalAmount.toFixed(2)}€</span>
-                    </div>
-
-                    {/* Barra de progreso visual */}
-                    {!isCancelled && (
-                      <div className="mt-3.5 bg-slate-100 h-1.5 rounded-full overflow-hidden flex">
-                        <div className={`h-full transition-all duration-500 ${
-                          isPending ? "w-[25%] bg-[#FFD400]" :
-                          isCooking ? "w-[60%] bg-indigo-500" :
-                          isReady ? "w-[90%] bg-emerald-500" : "w-full bg-slate-400"
-                        }`} />
+                    {order.status !== "cancelado" && (
+                      <div className="mt-4 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${status.progress}`} />
                       </div>
                     )}
                   </motion.div>
@@ -897,29 +882,27 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
         </main>
       )}
 
-      {/* FLOAT BAR DE BOTÓN DE COMPRA (CARRITO) */}
+      {/* CESTA FLOTANTE */}
       {cart.length > 0 && activeTab === "menu" && (
-        <div className="fixed bottom-20 left-4 right-4 sm:bottom-0 sm:left-0 sm:right-0 sm:p-4  z-30 flex justify-center pointer-events-none">
+        <div className="fixed left-4 right-4 z-40 flex justify-center pointer-events-none" style={{ bottom: "calc(96px + env(safe-area-inset-bottom))" }}>
           <motion.button
             key={cartTrigger}
-            initial={{ scale: 0.9, y: 5 }}
+            initial={{ scale: 0.94, y: 6 }}
             animate={{ scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 10 }}
-            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 520, damping: 16 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => setIsCartOpen(true)}
-            className="w-full max-w-sm bg-indigo-600 hover:bg-slate-900 text-white font-bold py-3.5 px-5 rounded-full sm:rounded-xl shadow-xl flex justify-between items-center transition cursor-pointer pointer-events-auto"
+            className="cv-basket"
             id="btn_bottom_basket"
           >
-            <div className="flex items-center space-x-2">
-              <span className="bg-white/20 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-black">
-                {cart.reduce((s, c) => s + c.quantity, 0)}
-              </span>
-              <span className="text-sm">Ver mi cesta</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-xs text-indigo-200">Total:</span>
-              <span className="text-sm font-extrabold">{cartTotal.toFixed(2)}€</span>
-            </div>
+            <span className="flex flex-col items-start leading-tight">
+              <span className="text-[11px] font-semibold opacity-70">Tu cesta</span>
+              <span className="text-lg tabular-nums">{cartTotal.toFixed(2).replace(".", ",")} €</span>
+            </span>
+            <span className="flex items-center gap-3 text-sm">
+              Ver y pedir
+              <span className="cv-basket-count">{cartCount}</span>
+            </span>
           </motion.button>
         </div>
       )}
@@ -945,9 +928,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                 <div>
                     <h2 className="text-base font-extrabold text-slate-900 flex items-center space-x-2" id="cart-modal-title">
                       <ShoppingBag className="w-5 h-5 text-indigo-600" />
-                      <span>Tu Cesta {tableNumber ? `(Mesa ${tableNumber})` : ""}</span>
+                      <span>Tu cesta</span>
                   </h2>
-                  <p className="text-[10px] text-slate-500">Revisa tus consumiciones antes de enviar a cocina</p>
+                  <p className="text-[10px] text-slate-500">Repásala antes de pedir</p>
                 </div>
                 <button 
                   onClick={() => setIsCartOpen(false)}
@@ -1036,11 +1019,11 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               <div className="border-t border-slate-100 pt-3 mt-4">
                 <div className="bg-slate-50 p-3 rounded-xl flex items-center space-x-2 justify-between">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-500 block">FORMA DE PAGO</span>
-                    <span className="text-xs font-semibold text-slate-700">Se abona al marchar con el camarero</span>
+                    <span className="text-[10px] font-bold text-slate-500 block">Pago</span>
+                    <span className="text-xs font-semibold text-slate-700">Pagas al final, al camarero</span>
                   </div>
                   <span className="text-xs bg-olive/10 text-olive font-bold px-2 py-1 rounded inline-flex items-center">
-                    Cuenta única de la mesa
+                    Una cuenta por mesa
                   </span>
                 </div>
               </div>
@@ -1048,7 +1031,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               {/* Enviar pedido */}
               <div className="mt-5 pt-3 border-t border-slate-100 space-y-4">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-xs font-bold text-slate-500">CONSUMO FINAL CESTA:</span>
+                  <span className="text-xs font-bold text-slate-500">Total de este pedido</span>
                   <span className="text-lg font-black text-slate-900">{cartTotal.toFixed(2)}€</span>
                 </div>
 
@@ -1057,16 +1040,16 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                   type="button"
                   disabled={loading || !canOrder}
                   onClick={submitOrder}
-                  className="w-full bg-slate-950 hover:bg-indigo-600 disabled:bg-slate-300 text-white font-extrabold text-sm py-4 rounded-xl flex justify-center items-center space-x-2 shadow-md cursor-pointer transition"
+                  className="w-full h-14 bg-accent hover:bg-accent-soft disabled:opacity-50 text-black font-extrabold text-base rounded-full flex justify-center items-center gap-2 cursor-pointer"
                   id="btn_send_kitchen"
                 >
                   {loading ? (
-                    <span>Procesando comanda...</span>
+                    <span>Enviando…</span>
                   ) : !canOrder ? (
                     <span>Escanea el QR físico de tu mesa para pedir</span>
                   ) : (
                     <>
-                      <span>Enviar pedido a cocina y barra</span>
+                      <span>Pedir ahora</span>
                     </>
                   )}
                 </motion.button>
@@ -1097,25 +1080,14 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl relative max-h-[85vh] flex flex-col z-10 overflow-hidden"
               id="modifier_modal"
             >
-              {/* Product Header Graphic with Gradient & Emoji */}
-              <div className="h-40 bg-[#FFD400] border-b-4 border-black relative flex items-center justify-center shrink-0">
-                {/* Drag handle for mobile */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/40 rounded-full" />
-                <span className="text-6xl drop-shadow-lg select-none">
-                  {selectedProductForExtras.name.toLowerCase().includes("hamburguesa") || selectedProductForExtras.name.toLowerCase().includes("burger") ? "🍔" :
-                   selectedProductForExtras.name.toLowerCase().includes("pizza") ? "🍕" :
-                   selectedProductForExtras.name.toLowerCase().includes("pasta") || selectedProductForExtras.name.toLowerCase().includes("tallarines") ? "🍝" :
-                   selectedProductForExtras.name.toLowerCase().includes("ensalada") ? "🥗" :
-                   selectedProductForExtras.name.toLowerCase().includes("refresco") || selectedProductForExtras.name.toLowerCase().includes("coca") || selectedProductForExtras.name.toLowerCase().includes("cerveza") || selectedProductForExtras.name.toLowerCase().includes("agua") ? "🥤" :
-                   selectedProductForExtras.name.toLowerCase().includes("tarta") || selectedProductForExtras.name.toLowerCase().includes("postre") || selectedProductForExtras.name.toLowerCase().includes("helado") ? "🍰" :
-                   "🍽️"}
-                </span>
-                {/* Close Button overlay */}
+              <div className="cv-card-media !aspect-auto h-32 shrink-0">
+                {getCategoryIcon(categories.find((category) => category.id === selectedProductForExtras.categoryId)?.icon, selectedProductForExtras.name)}
                 <button
                   type="button"
                   onClick={() => setSelectedProductForExtras(null)}
                   data-close-modal
-                  className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 transition cursor-pointer"
+                  aria-label="Cerrar"
+                  className="absolute top-3 right-3 w-10 h-10 grid place-items-center bg-black/40 hover:bg-black/60 text-white rounded-full cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1216,44 +1188,24 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
         )}
       </AnimatePresence>
 
-      {/* BOTTOM NAVIGATION PILL FOR MOBILE */}
-      <div className="sm:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[85%] max-w-[280px] bg-black border-[3px] border-[#FFD400] rounded-md shadow-[4px_4px_0_#FFD400] z-40 flex justify-around items-center py-2.5 px-4 border border-white/10">
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          type="button"
-          onClick={() => setActiveTab("menu")}
-          className={`flex flex-col items-center justify-center space-y-0.5 text-xs font-bold transition-all relative ${
-            activeTab === "menu" ? "text-[#FFD400] scale-105" : "text-slate-400 hover:text-slate-200"
-          }`}
-          id="mobile_tab_client_menu"
-        >
-          <Utensils className="w-5 h-5" />
-          <span>Carta</span>
-        </motion.button>
-        
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          type="button"
-          onClick={() => {
-            setActiveTab("orders");
-            fetchMyOrders();
+      {/* NAVEGACIÓN DEL CLIENTE: LiquidBar con la campana como acción separada */}
+      {!hasGlobalNav && (
+        <LiquidBar
+          id="client_nav"
+          ariaLabel="Carta y pedidos"
+          items={[
+            { key: "menu", label: "Carta", icon: Utensils },
+            { key: "orders", label: "Pedidos", icon: ListTodo, badge: activeOrdersCount || undefined }
+          ]}
+          selectedKey={activeTab}
+          onSelect={(key) => {
+            setActiveTab(key as "menu" | "orders");
+            if (key === "orders") fetchMyOrders();
+            window.scrollTo({ top: 0 });
           }}
-          className={`flex flex-col items-center justify-center space-y-0.5 text-xs font-bold transition-all relative ${
-            activeTab === "orders" ? "text-[#FFD400] scale-105" : "text-slate-400 hover:text-slate-200"
-          }`}
-          id="mobile_tab_client_orders"
-        >
-          <div className="relative">
-            <ListTodo className="w-5 h-5" />
-            {myOrders.length > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-black shadow-xs">
-                {myOrders.length}
-              </span>
-            )}
-          </div>
-          <span>Pedidos</span>
-        </motion.button>
-      </div>
+          action={tableNumber ? { label: "Llamar al camarero", icon: BellRing, onClick: () => setIsCallWaiterModalOpen(true), tinted: true } : undefined}
+        />
+      )}
 
       {/* MODAL SCANNER QR */}
       <AnimatePresence>
@@ -1276,10 +1228,10 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               </button>
               
               <h3 className="font-extrabold text-slate-900 text-sm mb-2 text-center">
-                📷 Escanear QR de Mesa
+                Escanea el QR de tu mesa
               </h3>
               <p className="text-[11px] text-slate-500 mb-4 text-center">
-                Enfoca el código QR de la mesa con tu cámara para asignarla automáticamente.
+                Apunta con la cámara al código de la mesa.
               </p>
               
               {/* Contenedor del escáner */}
@@ -1323,8 +1275,8 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               ref={waiterCallTrapRef}
               className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl relative max-h-[90vh] flex flex-col z-10"
             >
-              <h3 className="text-base font-extrabold text-slate-900 mb-2">🛎️ ¿En qué podemos ayudarte?</h3>
-              <p className="text-xs text-slate-500 mb-4">Elige el motivo para que el camarero sepa qué traer de antemano.</p>
+              <h3 className="text-xl text-slate-900 mb-2">¿Qué necesitas?</h3>
+              <p className="text-xs text-slate-500 mb-4">Así el camarero ya sabe a qué va.</p>
               
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
@@ -1400,10 +1352,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{ left: p.x, top: p.y }}
-          className="fixed pointer-events-none z-50 text-base flex items-center justify-center bg-olive text-white rounded-full w-5 h-5 font-black shadow-lg"
-        >
-          🍔
-        </motion.div>
+          className="fixed pointer-events-none z-50 rounded-full w-4 h-4 bg-accent shadow-lg"
+          aria-hidden="true"
+        />
       ))}
     </div>
   );

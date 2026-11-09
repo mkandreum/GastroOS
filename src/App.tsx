@@ -11,6 +11,7 @@ import { UserRole, User } from "./types";
 import { ToastProvider } from "./components/ToastProvider";
 import { tryDirectPrint } from "./utils/directPrint";
 import ErrorBoundary from "./components/ErrorBoundary";
+import LiquidBar from "./components/LiquidBar";
 
 const ClientView = lazy(() => import("./components/ClientView"));
 const CamareroView = lazy(() => import("./components/CamareroView"));
@@ -22,9 +23,9 @@ const AuthView = lazy(() => import("./components/AuthView"));
 function RoleFallback() {
   return (
     <div className="flex flex-1 items-center justify-center p-10">
-      <div className="flex items-center gap-3 text-sm font-semibold text-ink-muted">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-olive" />
-        Cargando terminal
+      <div className="flex items-center gap-3 text-sm font-semibold text-ink-muted" role="status">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/15 border-t-accent" />
+        Cargando
       </div>
     </div>
   );
@@ -282,71 +283,49 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <ToastProvider>
     <ErrorBoundary>
-    <div className={`min-h-screen grid-bg flex flex-col text-ink selection:bg-olive selection:text-white ${showNav ? "app-shell" : ""} ${selectedRole !== "cliente" ? "brutal-internal" : ""}`} id="unified_master_app">
-      
-      {/* BARRA DE NAVEGACIÓN FLOTANTE (lateral en escritorio, dock inferior en móvil) */}
+    <div className={`app-root flex flex-col text-ink ${showNav ? "app-shell" : ""}`} data-role={selectedRole} id="unified_master_app">
+      <div className="ambient" aria-hidden="true"><i /><i /><i /></div>
+
+      {/* NAVEGACIÓN: LiquidBar (cápsula de cristal con lente; la sesión vive en su propio círculo) */}
       {showNav && (
-        <nav className="float-nav" aria-label="Navegación principal" id="floating_nav">
-          <div className="nav-brand" title="GastroOS">G</div>
-          <div className="nav-sep" />
-          {navItems.map(({ role, label, Icon }) => (
-            <button
-              key={role}
-              onClick={() => setSelectedRole(role)}
-              aria-current={selectedRole === role ? "page" : undefined}
-              className="nav-item"
-              title={label}
-            >
-              <Icon className="w-5 h-5" />
-              <span>{label}</span>
-            </button>
-          ))}
-          <div className="nav-sep" />
-          {currentUser ? (
-            <button onClick={handleLogout} className="nav-item" title={`Cerrar sesión (${currentUser.name})`}>
-              <span className="nav-dot" />
-              <LogOut className="w-5 h-5" />
-              <span>Salir</span>
-            </button>
-          ) : (
-            <button onClick={() => setSelectedRole("admin")} className="nav-item" title="Acceso personal" aria-current={selectedRole === "admin" ? "page" : undefined}>
-              <LogIn className="w-5 h-5" />
-              <span>Acceso</span>
-            </button>
-          )}
-        </nav>
+        <LiquidBar
+          id="floating_nav"
+          ariaLabel="Navegación principal"
+          items={navItems.map(({ role, label, Icon }) => ({ key: role, label, icon: Icon }))}
+          selectedKey={navItems.some((item) => item.role === selectedRole) ? selectedRole : null}
+          onSelect={(key) => setSelectedRole(key as UserRole)}
+          action={currentUser
+            ? { label: `Cerrar sesión (${currentUser.name})`, icon: LogOut, onClick: handleLogout, badge: true }
+            : { label: "Acceso del personal", icon: LogIn, onClick: () => setSelectedRole("admin"), tinted: selectedRole !== "cliente" }}
+        />
       )}
 
-      {/* SUB-HEADER ACCESOS RAPIDOS MESA CLIENTE (Oculto en Kiosk QR real o en producción) */}
+      {/* Selector de mesa para previsualizar la carta (oculto con QR real o en la instancia de cliente) */}
       {!isKioskMode && selectedRole === "cliente" && appType === "both" && (
-        <section className="glass-panel mx-3 mt-3 rounded-2xl text-slate-600 px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 tracking-tight shrink-0 gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-amber-400 font-bold shrink-0">Simulador QR</span>
-            <span className="text-slate-300">Mesa virtual activa:</span>
-            
+        <section className="glass-panel mx-3 mt-3 rounded-full pl-4 pr-2 py-1.5 text-xs flex items-center justify-between gap-3 shrink-0 relative z-40">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-accent shrink-0">Vista previa</span>
+          <label className="flex items-center gap-2 min-w-0">
+            <span className="text-white/60 hidden sm:inline">Mesa que simulas</span>
             <select
               value={selectedSimTable || 1}
               onChange={(e) => {
                 const num = parseInt(e.target.value);
                 setSelectedSimTable(num);
-                // Si cambiamos, forzamos redirección simulada borrando/actualizando query para que rutee limpio
                 const url = new URL(window.location.href);
                 url.searchParams.set("mesa", String(num));
                 url.searchParams.delete("t");
                 window.history.pushState({}, "", url.toString());
                 setTableToken(null);
               }}
-              className="bg-white text-slate-900 font-black border border-slate-200 rounded px-2.5 py-0.5 cursor-pointer focus:outline-none"
+              className="bg-white/10 text-white font-bold border border-white/10 px-3 py-1.5 cursor-pointer"
               id="simulated_table_picker"
+              aria-label="Mesa simulada"
             >
               {Array.from({ length: 8 }, (_, i) => (
                 <option key={i+1} value={i+1}>Mesa {i+1}</option>
               ))}
             </select>
-          </div>
-          <span className="hidden sm:inline-flex items-center text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-            Emulación de dispositivo móvil
-          </span>
+          </label>
         </section>
       )}
 
@@ -368,6 +347,7 @@ export default function App() {
                 tableToken={tableToken}
                 onUnlockRoles={handleUnlockKiosk}
                 isKioskMode={isKioskMode}
+                hasGlobalNav={showNav}
               />
             </motion.div>
           )}

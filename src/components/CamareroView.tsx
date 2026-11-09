@@ -8,7 +8,7 @@ import {
   motion, AnimatePresence 
 } from "motion/react";
 import { 
-  Clock, CheckCircle, Table as TableIcon, DollarSign, Split, Info, Bell, BellOff, X, Check, Users, ShoppingCart, Loader2, Printer, Trash, MessageSquare, UserPlus, UserX
+  Clock, CheckCircle, Table as TableIcon, DollarSign, Split, Info, Bell, BellOff, X, Check, Users, ShoppingCart, Loader2, Printer, Trash, MessageSquare, UserPlus, UserX, Edit3, BellRing
 } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import ConfirmDialog from "./ConfirmDialog";
@@ -186,7 +186,7 @@ export default function CamareroView() {
     if (readyOrders.length > prevReadyCount && prevReadyCount > 0) {
       const newOnes = readyOrders.slice(0, readyOrders.length - prevReadyCount);
       const names = newOnes.map(o => o.tableName).join(", ");
-      setPushBanner({ msg: `🍽️ Nuevos platos listos: ${names}`, type: "success" });
+      setPushBanner({ msg: `Nuevos platos listos: ${names}`, type: "success" });
       setTimeout(() => setPushBanner(null), 4000);
       triggerHaptic();
       playNotificationSound();
@@ -237,7 +237,7 @@ export default function CamareroView() {
       });
       if (res.ok) {
         setWaiterCalls(prev => prev.filter(c => c.id !== callId));
-        toast("🛎️ Llamada atendida con éxito.", "success");
+        toast("Llamada atendida con éxito.", "success");
       } else {
         toast("Error al marcar llamada como atendida.", "error");
       }
@@ -548,15 +548,7 @@ export default function CamareroView() {
     } 
     // Si pagamos por partes iguales, calculamos el total correspondiente a una parte
     else if (splitMethod === "partes_iguales") {
-      const totalPart = activeBill.total / dinersCount;
-      payload.customItems = [
-        {
-          name: `Pago Fraccionado (1/${dinersCount} parte)`,
-          quantity: 1,
-          priceUnit: totalPart,
-          priceTotal: totalPart
-        }
-      ];
+      payload.amount = equalShare();
     }
 
     setClosingBill(true);
@@ -594,7 +586,8 @@ export default function CamareroView() {
         setIsSplitOpen(false);
         fetchTablesAndOrders();
       } else {
-        toast("Error al procesar el pago.", "error");
+        const failure = await res.json().catch(() => null);
+        toast(failure?.error || "Error al procesar el pago.", "error");
       }
     } catch (err) {
       console.error(err);
@@ -602,6 +595,15 @@ export default function CamareroView() {
     } finally {
       setClosingBill(false);
     }
+  };
+
+  // Parte de cada comensal: se reparte el total de la sesión (no lo que queda), y el último pago
+  // nunca supera lo pendiente. Así N pagos iguales cierran la cuenta exacta.
+  const equalShare = () => {
+    if (!activeBill) return 0;
+    const base = activeBill.sessionTotal ?? activeBill.total;
+    const share = Math.round((base / dinersCount) * 100) / 100;
+    return Math.min(share, activeBill.total);
   };
 
   // Ayudante para ajustar por líneas en la división manual
@@ -649,7 +651,7 @@ export default function CamareroView() {
         <div>
           <span className="text-[10px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase">Operativa diaria de sala</span>
           <h1 className="text-xl font-black text-slate-800 tracking-tight mt-0.5 flex items-center space-x-1">
-            <span>🤵 Panel de Camareros</span>
+            <span>Panel de Camareros</span>
           </h1>
         </div>
         <div className="flex items-center space-x-2">
@@ -671,8 +673,8 @@ export default function CamareroView() {
             onClick={openModifyTickets}
             className="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-3 py-2 rounded-xl border border-indigo-200 cursor-pointer transition flex items-center space-x-1"
           >
-            <span>✏️</span>
-            <span>Modificar Tickets</span>
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>Modificar tickets</span>
           </button>
         </div>
       </div>
@@ -688,17 +690,17 @@ export default function CamareroView() {
             id="waiter_calls_banner"
           >
             <h2 className="text-xs font-black text-amber-800 uppercase tracking-wider mb-2.5 flex items-center space-x-1.5 animate-pulse">
-              <span>🛎️</span>
+              <BellRing className="w-4 h-4" />
               <span>Llamadas de Clientes Activas ({waiterCalls.length})</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {waiterCalls.map(call => {
                 const reasonText = 
-                  call.reason === "cuenta" ? "Pide la Cuenta 🧾" :
-                  call.reason === "ayuda" ? "Solicita Ayuda 🙋‍♂️" :
-                  call.reason === "cubiertos" ? "Necesita Cubiertos 🍴" :
-                  call.reason === "limpieza" ? "Pide Limpieza / Retirar 🧼" :
-                  "Tiene una Duda 📖";
+                  call.reason === "cuenta" ? "Pide la cuenta" :
+                  call.reason === "ayuda" ? "Necesita ayuda" :
+                  call.reason === "cubiertos" ? "Necesita cubiertos" :
+                  call.reason === "limpieza" ? "Pide que retiren o limpien" :
+                  "Tiene una duda";
                 return (
                   <motion.div 
                     layout
@@ -811,7 +813,7 @@ export default function CamareroView() {
                         )}
                         {hasCall && (
                           <span className="absolute -top-2.5 -right-2.5 bg-red-600 border border-white text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-md animate-bounce z-10">
-                            🛎️
+                            <BellRing className="w-3.5 h-3.5" />
                           </span>
                         )}
                         <button
@@ -892,7 +894,7 @@ export default function CamareroView() {
                       )}
                       {hasCall && (
                         <span className="absolute -top-2 -right-2 bg-red-600 border border-white text-white text-[10px] w-6.5 h-6.5 rounded-full flex items-center justify-center font-bold shadow-md animate-bounce z-10">
-                          🛎️
+                          <BellRing className="w-3.5 h-3.5" />
                         </span>
                       )}
                       <button
@@ -1058,7 +1060,7 @@ export default function CamareroView() {
                       className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-lg border border-indigo-100 cursor-pointer transition"
                       title="Modificar tickets de esta mesa"
                     >
-                      ✏️ Tickets
+                      Tickets
                     </button>
                     <button 
                       onClick={() => {
@@ -1125,7 +1127,7 @@ export default function CamareroView() {
                               drag="x"
                               dragConstraints={{ left: -140, right: 0 }}
                               dragElastic={{ left: 0.1, right: 0.3 }}
-                              className="bg-white p-3 flex justify-between items-start text-xs relative z-10 w-full rounded-xl border border-slate-100 shadow-xxs"
+                              className="swipe-row bg-white p-3 flex justify-between items-start text-xs relative z-10 w-full rounded-xl border border-slate-100 shadow-xxs"
                             >
                               <div className="flex-1 pr-2">
                                 <p className="font-bold text-slate-800">{item.quantity}x {item.name}</p>
@@ -1248,14 +1250,14 @@ export default function CamareroView() {
                         ) : splitMethod === "partes_iguales" ? (
                           <>
                             <div className="flex justify-between text-xs">
-                              <span>Monto Total de Mesa</span>
+                              <span>Pendiente de la mesa</span>
                               <span>{activeBill.total.toFixed(2)}€</span>
                             </div>
                             <div className="flex justify-between text-sm font-black text-indigo-700 pt-1.5 border-t border-slate-100">
                               <span>A Cobrar (1 de {dinersCount})</span>
-                              <span>{(activeBill.total / dinersCount).toFixed(2)}€</span>
+                              <span>{equalShare().toFixed(2)}€</span>
                             </div>
-                            <p className="text-[10px] text-slate-500 italic mt-1 text-center">Se cobrará una parte parcial, reduciendo la fianza restante de la mesa.</p>
+                            <p className="text-[10px] text-slate-500 italic mt-1 text-center">Se cobra una parte; el resto queda pendiente en la mesa.</p>
                           </>
                         ) : (
                           <>
@@ -1314,7 +1316,7 @@ export default function CamareroView() {
                     {activeBill.closedReceipts && activeBill.closedReceipts.length > 0 && (
                       <div className="mt-5 pt-4 border-t border-slate-200">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
-                          🧾 Tickets Cobrados en esta Sesión ({activeBill.closedReceipts.length})
+                          Tickets Cobrados en esta Sesión ({activeBill.closedReceipts.length})
                         </span>
                         <div className="space-y-2 max-h-[160px] overflow-y-auto">
                           {activeBill.closedReceipts.map((rec: any) => (
@@ -1377,7 +1379,7 @@ export default function CamareroView() {
               ref={modifyTicketTrapRef}
               className="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <h3 id="modify-ticket-title" className="font-extrabold text-slate-900 text-sm mb-4">✏️ Modificar Ticket Cerrado</h3>
+              <h3 id="modify-ticket-title" className="font-extrabold text-slate-900 text-sm mb-4">Modificar Ticket Cerrado</h3>
 
               {!authSuccess ? (
                 <>
@@ -1424,7 +1426,7 @@ export default function CamareroView() {
                 </>
               ) : !selectedTicket ? (
                 <>
-                  <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 mb-4 font-bold">✅ Autorización correcta. Selecciona un ticket:</p>
+                  <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 mb-4 font-bold">Autorización correcta. Selecciona un ticket:</p>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {closedTickets.length === 0 ? (
                       <p className="text-xs text-slate-500 text-center py-4">No hay tickets cerrados para esta mesa.</p>
@@ -1526,12 +1528,12 @@ export default function CamareroView() {
                     <button
                       onClick={async () => {
                         await saveTicketChanges();
-                        setPushBanner({ msg: "✅ Ticket guardado", type: "success" });
+                        setPushBanner({ msg: "Ticket guardado", type: "success" });
                         setTimeout(() => setPushBanner(null), 3000);
                       }}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-lg cursor-pointer transition"
                     >
-                      💾 Guardar
+                      Guardar
                     </button>
                     <button
                       onClick={() => {
@@ -1552,12 +1554,12 @@ export default function CamareroView() {
                           }
                         }));
                         
-                        setPushBanner({ msg: "🖨️ Diálogo de reimpresión abierto", type: "success" });
+                        setPushBanner({ msg: "Diálogo de reimpresión abierto", type: "success" });
                         setTimeout(() => setPushBanner(null), 3000);
                       }}
                       className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-lg cursor-pointer transition"
                     >
-                      🖨️ Reimprimir
+                      Reimprimir
                     </button>
                   </div>
                 </>
