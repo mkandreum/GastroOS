@@ -12,6 +12,7 @@ import { ToastProvider } from "./components/ToastProvider";
 import { tryDirectPrint } from "./utils/directPrint";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LiquidBar from "./components/LiquidBar";
+import { applyTheme, isTheme } from "./utils/theme";
 
 const ClientView = lazy(() => import("./components/ClientView"));
 const CamareroView = lazy(() => import("./components/CamareroView"));
@@ -86,6 +87,7 @@ export default function App() {
       .then(res => res.json())
       .then(data => {
         setConfigLoaded(true);
+        if (isTheme(data.theme)) applyTheme(data.theme);
         if (data.appType) {
           setAppType(data.appType);
           const hasSavedUser = !!localStorage.getItem("auth_user");

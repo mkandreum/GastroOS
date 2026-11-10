@@ -649,10 +649,8 @@ export default function CamareroView() {
       {/* TÍTULO */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <span className="text-[10px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase">Operativa diaria de sala</span>
-          <h1 className="text-xl font-black text-slate-800 tracking-tight mt-0.5 flex items-center space-x-1">
-            <span>Panel de Camareros</span>
-          </h1>
+          <span className="cv-eyebrow">Mesas, cuentas y cobro</span>
+          <h1 className="display text-5xl sm:text-6xl text-slate-900 mt-1">Sala</h1>
         </div>
         <div className="flex items-center space-x-2">
           {/* Indicador automático de notificaciones push */}
@@ -779,26 +777,6 @@ export default function CamareroView() {
                     const isMyTable = currentUser && table.assignedWaiterId === currentUser.id;
                     const isOthersTable = table.assignedWaiterId && table.assignedWaiterId !== currentUser?.id;
 
-                    const bgColor = hasCall
-                      ? "bg-amber-400 border-amber-500 animate-ring-once hover:bg-amber-500"
-                      : isMyTable
-                      ? "bg-indigo-100 border-indigo-400 border-3 hover:bg-indigo-200"
-                      : isFree
-                      ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
-                      : isOccupied
-                      ? "bg-amber-50 border-amber-200 hover:bg-amber-100"
-                      : "bg-sky-50 border-sky-200 hover:bg-sky-100";
-
-                    const statusColor = hasCall
-                      ? "bg-red-600 text-white font-extrabold"
-                      : isMyTable
-                      ? "bg-indigo-500 text-white"
-                      : isFree
-                      ? "bg-emerald-200 text-emerald-800"
-                      : isOccupied
-                      ? "bg-amber-200 text-amber-800"
-                      : "bg-sky-200 text-sky-800";
-
                     return (
                       <div key={table.id} className="absolute" style={{ left: table.posX, top: table.posY, width: table.width || 150, height: table.height || 110 }}>
                         {isMyTable && (
@@ -818,13 +796,18 @@ export default function CamareroView() {
                         )}
                         <button
                           onClick={() => loadActiveBill(table)}
-                          className={`select-none w-full h-[90px] ${bgColor} border-2 rounded-2xl cursor-pointer active:scale-95 transition-all duration-150`}
+                          className={`mesa select-none w-full h-[90px] cursor-pointer active:scale-95 transition-transform duration-150 ${hasCall ? "animate-pulse-gentle" : ""}`}
+                          data-status={hasCall ? "pendiente_pago" : table.status}
+                          data-selected={selectedTable?.id === table.id || undefined}
+                          aria-label={`${table.name}, ${hasCall ? "llama al camarero" : isFree ? "libre" : isOccupied ? `ocupada, ${table.currentBillTotal.toFixed(2)} euros` : "pendiente de pago"}`}
                         >
-                          <div className="flex flex-col items-center justify-center h-full p-1">
-                            <span className={`text-xs font-mono font-bold ${hasCall ? "text-amber-950" : isMyTable ? "text-indigo-600" : "text-slate-500"}`}>#{table.number}</span>
-                            <span className={`font-extrabold text-xs text-center leading-tight ${hasCall ? "text-slate-950" : isMyTable ? "text-indigo-800" : "text-slate-800"}`}>{table.name}</span>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 ${statusColor}`}>
-                              {hasCall ? "LLAMADA" : isFree ? "Libre" : isMyTable ? "Tu mesa" : isOccupied ? `${table.currentBillTotal.toFixed(1)}€` : "Pago"}
+                          <div className="flex items-center justify-between h-full px-3 gap-2 text-left">
+                            <span className="mesa-num">{table.number}</span>
+                            <span className="flex flex-col items-end gap-1 min-w-0">
+                              <span className="font-bold text-[11px] leading-tight text-right line-clamp-2">{table.name}</span>
+                              <span className="mesa-tag">
+                                {hasCall ? "Llama" : isFree ? "Libre" : isOccupied ? `${table.currentBillTotal.toFixed(2)} €` : "Por cobrar"}
+                              </span>
                             </span>
                           </div>
                         </button>
@@ -1042,13 +1025,13 @@ export default function CamareroView() {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col h-full"
+                className="ticket p-5 flex flex-col h-full"
                 id="selected_table_billing_card"
               >
                 {/* Header mesa */}
                 <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-3">
                   <div>
-                    <h3 className="font-extrabold text-sm text-slate-900">{selectedTable.name}</h3>
+                    <h3 className="display !text-3xl">{selectedTable.name}</h3>
                     <p className="text-[10px] text-slate-500">Estado: {selectedTable.status.toUpperCase()}</p>
                   </div>
                   <div className="flex items-center space-x-1.5">
@@ -1093,7 +1076,7 @@ export default function CamareroView() {
                         const splitQty = selectedSplitLineIds[key] || 0;
 
                         return (
-                          <div key={idx} className="relative overflow-hidden border-b border-slate-100 pb-2 bg-slate-50 rounded-xl mb-1.5">
+                          <div key={idx} className="relative overflow-hidden rounded-xl">
                             {/* Panel de acciones de fondo (Swipe para revelar) */}
                             <div className="absolute right-0 top-0 bottom-0 flex items-center pr-2 space-x-1 z-0">
                               <button

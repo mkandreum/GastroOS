@@ -78,7 +78,7 @@ app.use(helmet({
       scriptSrc: ["'self'", ...(isProduction ? [] : ["'unsafe-inline'"])],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:", "blob:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
       connectSrc: ["'self'", ...(isProduction ? [] : ["ws:", "wss:"])],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
@@ -113,8 +113,14 @@ app.use((req: any, res: any, next: any) => {
   next();
 });
 
+const THEMES = ["papel", "noche"] as const;
+function currentTheme(): string {
+  const saved = dbInstance.getSetting("theme", "papel");
+  return (THEMES as readonly string[]).includes(saved) ? saved : "papel";
+}
+
 app.get("/api/app-config", (req, res) => {
-  res.json({ appType: APP_TYPE });
+  res.json({ appType: APP_TYPE, theme: currentTheme() });
 });
 
 app.get("/health", (req, res) => {
@@ -1623,6 +1629,16 @@ app.put("/api/closed-receipts/:id", requireRole("admin"), (req: any, res) => {
     details: { before: { total: before.total, items: before.items }, after: updates }
   });
   res.json(updated);
+});
+
+// Apariencia: tema visual de toda la app (carta del cliente incluida)
+app.put("/api/settings/theme", requireRole("admin"), (req: any, res) => {
+  const theme = req.body?.theme;
+  if (!(THEMES as readonly string[]).includes(theme)) return res.status(400).json({ error: "Tema no válido." });
+  dbInstance.setSetting("theme", theme);
+  dbInstance.logAudit({ actorId: req.user.sub, actorName: req.user.name, action: "update", entity: "settings", entityId: "theme", details: { theme } });
+  broadcastEvent("settings:theme", { theme });
+  res.json({ theme });
 });
 
 app.get("/api/audit-log", requireRole("admin"), (req, res) => {

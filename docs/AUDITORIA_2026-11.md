@@ -51,12 +51,25 @@ Una primera versión oscura con luces difuminadas se descartó por genérica. La
 - **LiquidBar**: `src/components/LiquidBar.tsx` es un port a web de `mkandreum/liquidbar` (estilo cápsula con plegado). Conserva sus valores: desenfoque 4 px, saturación ×1,5, canto de 24 px que refracta hacia dentro, lente con muelle (0.62, 420) que crece ×78/56 al pulsar y se arrastra entre pestañas, plegado al bajar 50 px / abrir al subir 8 px y acción separada en su propio círculo. Se usa como navegación principal del personal (acción: sesión) y como barra del cliente (Carta / Pedidos, acción: llamar al camarero). El tinte es más denso que el original (62 % en vez de 40 %) para que se lea sobre fondos claros.
 - La refracción del canto usa `backdrop-filter: url()` con un mapa de desplazamiento SVG, que hoy solo pinta Chromium. En Safari y Firefox se ve el mismo cristal sin canto refractado.
 
+## Temas
+
+En **Administración → Apariencia** se elige el tema de toda la app (carta del cliente y paneles). Se guarda en el servidor (`settings.theme`), lo sirve `/api/app-config` y cada dispositivo lo aplica al abrir o recargar.
+
+- **Papel y tinta** (por defecto): el descrito arriba.
+- **Noche**: negro, rótulos condensados en mayúsculas (Bebas Neue) y acento ámbar, pensado para que mande la foto del plato.
+
+Las comandas y la cuenta de sala son tickets de papel en los dos temas. Para añadir un tema basta con redefinir las variables de `:root` en `src/index.css` y registrarlo en `src/utils/theme.ts` y en `THEMES` de `server.ts`.
+
+Cada producto admite ahora una foto por enlace `https` (formulario de producto). La CSP permite imágenes `https:`; sin foto se muestra un bloque de color con el icono de la categoría.
+
+Sala y administración se repasaron a mano: mesas como bloques con número grande y color por estado, la cuenta como ticket (y ya no asoman los botones de deslizar bajo cada línea), y cifras de resumen en bloques grandes.
+
 ## Pendiente (no tocado)
 
 1. El token del QR de mesa es fijo: quien lo fotografíe puede seguir pidiendo a esa mesa desde fuera. Haría falta rotarlo por sesión o exigir confirmación del camarero.
 2. El token de sesión viaja en la URL de `/api/events` (limitación de `EventSource`) y puede acabar en logs del proxy.
 3. `POST /api/push/unsubscribe` no pide autenticación.
-4. Las imágenes de producto con URL externa las bloquea la CSP (`img-src 'self'`); falta subida de imágenes propia.
+4. Las fotos de producto son enlaces externos; falta subida de imágenes propia.
 5. Hay clases de Tailwind inexistentes en las vistas internas (`text-slate-505`, `bg-amber-55`…) que no hacen nada.
 6. `AdminView` (2700 líneas) y `CamareroView` (1600) piden dividirse en componentes y tener tests de interfaz.
 7. Siguen abiertos los puntos de producto de `REMEDIACION_AUDITORIA.md` (facturación legal, pasarela de pago, reservas).

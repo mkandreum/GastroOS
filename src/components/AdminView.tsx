@@ -10,8 +10,9 @@ import {
 import { 
   BarChart3, Settings, Table as TableIcon, BookOpen, Printer, Shield, ChevronRight, 
   Trash2, PlusCircle, Edit3, Check, Eye, Download, Info, RefreshCw, AlertTriangle, UserCheck,
-  ReceiptText, Palette, ScrollText
+  ReceiptText, Palette, ScrollText, SwatchBook
 } from "lucide-react";
+import { applyTheme, cachedTheme, THEMES, ThemeId } from "../utils/theme";
 import { useToast } from "./ToastProvider";
 import ConfirmDialog from "./ConfirmDialog";
 import { useConfirm } from "./useConfirm";
@@ -22,7 +23,7 @@ import TableQR from "./TableQR";
 import { useFocusTrap } from "./useFocusTrap";
 
 export default function AdminView() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "tables" | "printer" | "tickets" | "users" | "ticket-tpl" | "audit">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "tables" | "printer" | "tickets" | "users" | "ticket-tpl" | "audit" | "look">("dashboard");
   const [dateRange, setDateRange] = useState<"today" | "week" | "all">("all");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [tables, setTables] = useState<Table[]>([]);
@@ -51,6 +52,9 @@ export default function AdminView() {
   const [prodCatId, setProdCatId] = useState("");
   const [prodName, setProdName] = useState("");
   const [prodDesc, setProdDesc] = useState("");
+  const [prodImage, setProdImage] = useState("");
+  const [theme, setTheme] = useState<ThemeId>(cachedTheme());
+  const [themeSaving, setThemeSaving] = useState(false);
   const [prodPrice, setProdPrice] = useState("");
   const [prodStock, setProdStock] = useState("");
   const [prodAllergens, setProdAllergens] = useState<Allergen[]>([]);
@@ -222,6 +226,26 @@ export default function AdminView() {
   };
 
   // OPERACIONES DE PRODUCTOS
+  const chooseTheme = async (next: ThemeId) => {
+    if (next === theme) return;
+    setThemeSaving(true);
+    try {
+      const res = await fetch("/api/settings/theme", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ theme: next })
+      });
+      if (!res.ok) throw new Error();
+      setTheme(next);
+      applyTheme(next);
+      toast("Tema cambiado. Los demás dispositivos lo verán al recargar.", "success");
+    } catch {
+      toast("No se pudo cambiar el tema. Inténtalo de nuevo.", "error");
+    } finally {
+      setThemeSaving(false);
+    }
+  };
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodName || !prodCatId || !prodPrice) {
@@ -234,6 +258,7 @@ export default function AdminView() {
       categoryId: prodCatId,
       name: prodName,
       description: prodDesc,
+      image: /^https:\/\//i.test(prodImage.trim()) ? prodImage.trim() : "default.jpg",
       price: parseFloat(prodPrice),
       iva: parseInt(prodIva),
       stock: prodStock && prodStock !== "unlimited" ? parseInt(prodStock) : null,
@@ -260,6 +285,7 @@ export default function AdminView() {
         setEditProductMode(null);
         setProdName("");
         setProdDesc("");
+                    setProdImage("");
         setProdPrice("");
         setProdStock("");
         setProdAllergens([]);
@@ -817,6 +843,16 @@ export default function AdminView() {
             </button>
 
             <button
+              onClick={() => setActiveTab("look")}
+              className={`w-full flex items-center space-x-2.5 p-3 min-h-[44px] rounded-lg transition ${
+                activeTab === "look" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
+              }`}
+            >
+              <SwatchBook className="w-4 h-4" />
+              <span>Apariencia</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("audit")}
               className={`w-full flex items-center space-x-2.5 p-3 min-h-[44px] rounded-lg transition ${
                 activeTab === "audit" ? "bg-slate-800 text-white" : "hover:bg-slate-850 hover:text-white"
@@ -853,7 +889,7 @@ export default function AdminView() {
         {activeTab === "dashboard" && stats && (
           <div className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-black text-slate-800 tracking-tight">Ventas y métricas</h2>
+              <h2 className="display text-5xl sm:text-6xl text-slate-900">Ventas</h2>
               <div className="inline-flex rounded-xl border border-line bg-surface p-1 text-xs font-bold">
                 {([["today", "Hoy"], ["week", "7 días"], ["all", "Todo"]] as const).map(([value, label]) => (
                   <button
@@ -869,23 +905,27 @@ export default function AdminView() {
             </div>
 
             {/* Tarjetas KPI */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5" id="stats_cards_grid">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase">Ingresos Históricos</span>
-                <p className="text-2xl font-black text-slate-800 mt-1">{formatCurrency(stats.totalSales)}</p>
-                <span className="text-[10.5px] text-emerald-600 font-semibold block mt-1.5">✓ Contabilidad integrada</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" id="stats_cards_grid">
+              <div className="kpi" data-tone="hi">
+                <span className="kpi-label">Ventas</span>
+                <div>
+                  <p className="kpi-value">{formatCurrency(stats.totalSales)}</p>
+                  <p className="kpi-note">{dateRange === "today" ? "Hoy" : dateRange === "week" ? "Últimos 7 días" : "Desde el principio"}</p>
+                </div>
               </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase">Mesas Activas</span>
-                <p className="text-2xl font-black text-violet-600 mt-1">{stats.activeTablesCount}</p>
-                <span className="text-[10.5px] text-slate-500 block mt-1.5">Mesas consumiendo carta</span>
+              <div className="kpi" data-tone="dark">
+                <span className="kpi-label">Mesas abiertas</span>
+                <div>
+                  <p className="kpi-value">{stats.activeTablesCount}</p>
+                  <p className="kpi-note">Ahora mismo en sala</p>
+                </div>
               </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase">Ticket Medio por Mesa</span>
-                <p className="text-2xl font-black text-indigo-600 mt-1">{formatCurrency(stats.avgTicket)}</p>
-                <span className="text-[10.5px] text-slate-500 block mt-1.5">Ingreso promedio por cuenta</span>
+              <div className="kpi">
+                <span className="kpi-label">Ticket medio</span>
+                <div>
+                  <p className="kpi-value">{formatCurrency(stats.avgTicket)}</p>
+                  <p className="kpi-note">Por ticket cobrado</p>
+                </div>
               </div>
             </div>
 
@@ -1314,6 +1354,7 @@ export default function AdminView() {
                     setEditProductMode(null);
                     setProdName("");
                     setProdDesc("");
+                    setProdImage("");
                     setProdPrice("");
                     setProdStock("");
                     setProdAllergens([]);
@@ -1404,6 +1445,7 @@ export default function AdminView() {
                                         setEditProductMode(p);
                                         setProdName(p.name);
                                         setProdDesc(p.description);
+                                        setProdImage(p.image && p.image !== "default.jpg" ? p.image : "");
                                         setProdPrice(String(p.price));
                                         setProdStock(p.stock !== null ? String(p.stock) : "unlimited");
                                         setProdAllergens(p.allergens);
@@ -2213,6 +2255,49 @@ export default function AdminView() {
           </div>
         )}
 
+        {activeTab === "look" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="display text-5xl sm:text-6xl text-slate-900">Apariencia</h2>
+              <p className="text-sm text-slate-600 mt-3 max-w-xl">
+                El tema cambia toda la app: la carta que ven los clientes al escanear el QR y los paneles del personal.
+                Los demás dispositivos lo cogen la próxima vez que abran o recarguen la página.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl">
+              {THEMES.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className="theme-swatch"
+                  aria-pressed={theme === option.id}
+                  disabled={themeSaving}
+                  onClick={() => chooseTheme(option.id)}
+                >
+                  {option.id === "papel" ? (
+                    <div className="theme-swatch-art" style={{ background: "#E0401F", color: "#FFFCF5" }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em" }}>HOY SE COME</span>
+                      <b style={{ fontFamily: "Fraunces, serif", fontWeight: 900, letterSpacing: "-0.05em" }}>La <i style={{ fontWeight: 400, color: "#FFC72C" }}>carta</i></b>
+                    </div>
+                  ) : (
+                    <div className="theme-swatch-art" style={{ background: "#0B0B0B", color: "#FFFFFF" }}>
+                      <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: "#FFA800", lineHeight: 1 }}>12,99 €</span>
+                      <b style={{ fontFamily: "'Bebas Neue', sans-serif", fontWeight: 400 }}>LA <span style={{ color: "#FFA800" }}>CARTA</span></b>
+                    </div>
+                  )}
+                  <div className="p-4 bg-white">
+                    <p className="font-extrabold text-slate-900 flex items-center gap-2">
+                      {option.name}
+                      {theme === option.id && <span className="status-badge badge-ok"><Check className="w-3 h-3" /> En uso</span>}
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1">{option.blurb}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {activeTab === "audit" && (
           <div className="space-y-6">
             <h2 className="text-lg font-black text-slate-800">Auditoría</h2>
@@ -2558,7 +2643,21 @@ export default function AdminView() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Visual Receta / Ingredientes</label>
+                  <label htmlFor="prod_image_url" className="block text-[10px] font-bold text-slate-500 mb-1">Foto del plato (enlace https, opcional)</label>
+                  <input
+                    id="prod_image_url"
+                    type="url"
+                    inputMode="url"
+                    value={prodImage}
+                    onChange={(e) => setProdImage(e.target.value)}
+                    placeholder="https://…/plato.jpg"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-indigo-400 focus:bg-white"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">Sin foto se muestra un bloque de color con el icono de la categoría.</p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Descripción / ingredientes</label>
                   <textarea
                     rows={2}
                     value={prodDesc}

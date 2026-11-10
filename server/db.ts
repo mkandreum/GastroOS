@@ -258,6 +258,11 @@ class LocalDatabase {
         timestamp TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS event_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         event TEXT NOT NULL,
@@ -1632,6 +1637,15 @@ class LocalDatabase {
 
   public getAllPushSubscriptions(): Array<{ endpoint: string; p256dh: string; auth: string; role: string }> {
     return db.prepare("SELECT endpoint, p256dh, auth, role FROM push_subscriptions").all() as any[];
+  }
+
+  public getSetting(key: string, fallback: string): string {
+    const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
+    return row?.value ?? fallback;
+  }
+
+  public setSetting(key: string, value: string) {
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(key, value);
   }
 
   public publishEvent(event: string, data: unknown): number {
