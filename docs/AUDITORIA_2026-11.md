@@ -41,12 +41,15 @@ Base auditada: `43395b1` (`main`). Se revisó todo el servidor (`server.ts`, `se
 
 Cubierto por `tests/billing.test.ts` (6 casos nuevos) además de los tests y el smoke test existentes.
 
-## Diseño: «Noche líquida»
+## Diseño: «Papel y tinta»
 
-- Tema oscuro único: lienzo casi negro, luz ambiental que cambia de color según la sección, superficies de cristal y un solo acento cítrico. Titulares en Bricolage Grotesque condensada con contraste en Instrument Serif.
-- **LiquidBar**: `src/components/LiquidBar.tsx` es un port a web de `mkandreum/liquidbar` (estilo cápsula con plegado). Conserva sus valores: desenfoque 4 px, saturación ×1,5, canto de 24 px que refracta hacia dentro, lente con muelle (0.62, 420) que crece ×78/56 al pulsar y se arrastra entre pestañas, plegado al bajar 50 px / abrir al subir 8 px y acción separada en su propio círculo. Se usa como navegación principal del personal (acción: sesión) y como barra del cliente (Carta / Pedidos, acción: llamar al camarero).
-- La refracción del canto usa `backdrop-filter: url()` con un mapa de desplazamiento SVG, que hoy solo pinta Chromium. En Safari y Firefox se ve el mismo cristal sin canto refractado (equivalente al `fallback` de la librería).
-- Las vistas internas conservan su estructura: sus utilidades de Tailwind se reinterpretan desde los tokens de `src/index.css`.
+Una primera versión oscura con luces difuminadas se descartó por genérica. La actual sale de lo que hay en un restaurante: carta impresa y comanda térmica.
+
+- Colores planos a sangre, uno por puesto: tomate para el cliente, crema para sala y administración, negro para cocina, verde botella para barra. Sin degradados, brillos ni sombras difusas.
+- Fraunces (serif de cartel) para titulares y precios; mono para todo lo que sale de un ticket.
+- Las comandas de cocina y barra son tickets de papel con el borde cortado; el filo superior cambia de color con la espera (10 y 15 minutos).
+- **LiquidBar**: `src/components/LiquidBar.tsx` es un port a web de `mkandreum/liquidbar` (estilo cápsula con plegado). Conserva sus valores: desenfoque 4 px, saturación ×1,5, canto de 24 px que refracta hacia dentro, lente con muelle (0.62, 420) que crece ×78/56 al pulsar y se arrastra entre pestañas, plegado al bajar 50 px / abrir al subir 8 px y acción separada en su propio círculo. Se usa como navegación principal del personal (acción: sesión) y como barra del cliente (Carta / Pedidos, acción: llamar al camarero). El tinte es más denso que el original (62 % en vez de 40 %) para que se lea sobre fondos claros.
+- La refracción del canto usa `backdrop-filter: url()` con un mapa de desplazamiento SVG, que hoy solo pinta Chromium. En Safari y Firefox se ve el mismo cristal sin canto refractado.
 
 ## Pendiente (no tocado)
 

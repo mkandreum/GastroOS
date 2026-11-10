@@ -551,19 +551,19 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       <header className="cv-header sticky top-0 z-30 px-4 py-3 flex justify-between items-center gap-3">
         <div className="min-w-0 flex-1">
           <span className="cv-eyebrow block">{tableNumber ? "Tu mesa" : "Solo consulta"}</span>
-          <h1 className="text-xl sm:text-2xl text-white truncate">
+          <h1 className="text-2xl sm:text-3xl truncate">
             {tableInfo ? tableInfo.name : tableNumber ? `Mesa ${tableNumber}` : "Carta digital"}
           </h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {hasGlobalNav && (
-            <div className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10" role="tablist" aria-label="Secciones">
+            <div className="flex items-center gap-1 p-1 rounded-full border-2 border-slate-900" role="tablist" aria-label="Secciones">
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "menu"}
                 onClick={() => setActiveTab("menu")}
-                className={`px-3.5 h-9 rounded-full text-xs font-bold cursor-pointer ${activeTab === "menu" ? "bg-ink text-black" : "text-white/70 hover:text-white"}`}
+                className={`px-3.5 h-9 rounded-full text-xs font-bold cursor-pointer ${activeTab === "menu" ? "bg-slate-900 text-white" : "text-white"}`}
                 id="tab_client_menu"
               >
                 Carta
@@ -573,7 +573,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                 role="tab"
                 aria-selected={activeTab === "orders"}
                 onClick={() => { setActiveTab("orders"); fetchMyOrders(); }}
-                className={`px-3.5 h-9 rounded-full text-xs font-bold cursor-pointer ${activeTab === "orders" ? "bg-ink text-black" : "text-white/70 hover:text-white"}`}
+                className={`px-3.5 h-9 rounded-full text-xs font-bold cursor-pointer ${activeTab === "orders" ? "bg-slate-900 text-white" : "text-white"}`}
                 id="tab_client_orders"
               >
                 Pedidos{activeOrdersCount > 0 ? ` · ${activeOrdersCount}` : ""}
@@ -584,7 +584,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             <button
               type="button"
               onClick={() => setIsCallWaiterModalOpen(true)}
-              className="h-11 px-4 rounded-full bg-accent text-black text-xs font-extrabold flex items-center gap-2 cursor-pointer hover:bg-accent-soft"
+              className="h-11 px-4 rounded-full bg-accent text-black text-xs font-extrabold flex items-center gap-2 cursor-pointer border-2 border-slate-900"
             >
               <BellRing className="w-4 h-4" />
               <span className="hidden sm:inline">Llamar</span>
@@ -593,7 +593,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           <button
             type="button"
             onClick={() => setIsScannerOpen(true)}
-            className="w-11 h-11 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white cursor-pointer"
+            className="w-11 h-11 grid place-items-center rounded-full bg-slate-900 text-white cursor-pointer hover:bg-black"
             aria-label="Escanear el QR de la mesa"
             title="Escanear el QR de la mesa"
           >
@@ -623,20 +623,20 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           <div className="cv-header sticky top-[68px] z-20 border-t-0">
             <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 pt-3">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 <input
                   type="search"
                   placeholder="Busca un plato o una bebida"
                   aria-label="Buscar en la carta"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full h-12 bg-white/5 border border-white/10 !rounded-full pl-11 pr-11 text-sm text-white"
+                  className="cv-field w-full h-12 !rounded-full pl-11 pr-11 text-sm"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center rounded-full text-white/60 hover:text-white cursor-pointer"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center rounded-full text-slate-600 hover:text-slate-900 cursor-pointer"
                     aria-label="Borrar búsqueda"
                   >
                     <X className="w-4 h-4" />
@@ -669,12 +669,12 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
 
           <div className="max-w-6xl mx-auto w-full px-4 sm:px-8">
             {!tableNumber && (
-              <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-3xl flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="cv-note mt-4 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex items-start gap-3 flex-1">
                   <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-white">Estás viendo la carta sin mesa</p>
-                    <p className="text-xs text-white/70 mt-1 leading-relaxed">
+                    <p className="text-sm font-bold">Estás viendo la carta sin mesa</p>
+                    <p className="text-xs text-slate-700 mt-1 leading-relaxed">
                       Para pedir o llamar al camarero, escanea el QR que hay en tu mesa.
                     </p>
                   </div>
@@ -682,7 +682,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                 <button
                   type="button"
                   onClick={() => setIsScannerOpen(true)}
-                  className="h-11 px-5 rounded-full bg-accent text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-accent-soft"
+                  className="h-11 px-5 rounded-full bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <QrCode className="w-4 h-4" />
                   <span>Escanear QR</span>
@@ -691,21 +691,21 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             )}
 
             {tableNumber && !tableToken && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-3xl flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="cv-note mt-4 p-4 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-bold text-white">Falta validar la mesa</p>
-                  <p className="text-xs text-white/70 mt-1 leading-relaxed">Puedes ver la carta, pero para pedir tienes que escanear el QR físico de la mesa.</p>
+                  <p className="text-sm font-bold">Falta validar la mesa</p>
+                  <p className="text-xs text-slate-700 mt-1 leading-relaxed">Puedes ver la carta, pero para pedir tienes que escanear el QR físico de la mesa.</p>
                 </div>
               </div>
             )}
 
             {tableInfo && tableInfo.status === "pendiente_pago" && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-3xl flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="cv-note mt-4 p-4 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-bold text-white">La cuenta ya está pedida</p>
-                  <p className="text-xs text-white/70 mt-1">Si quieres algo más, puedes seguir pidiendo: se añade a la misma cuenta.</p>
+                  <p className="text-sm font-bold">La cuenta ya está pedida</p>
+                  <p className="text-xs text-slate-700 mt-1">Si quieres algo más, puedes seguir pidiendo: se añade a la misma cuenta.</p>
                 </div>
               </div>
             )}
@@ -720,12 +720,12 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             className="px-4 sm:px-8 py-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 content-start"
           >
             {menuLoading ? (
-              <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-semibold text-ink-muted" role="status">
+              <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-semibold" role="status">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Cargando la carta
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="col-span-full text-center py-16 text-white/60">
+              <div className="col-span-full text-center py-16">
                 <p className="text-sm">
                   {searchQuery ? `No hay nada en la carta que coincida con «${searchQuery}».` : "Ahora mismo no hay nada disponible en esta categoría."}
                 </p>
@@ -754,9 +754,9 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
 
                   <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 sm:p-4 gap-3">
                     <div>
-                      <h3 className="text-[17px] sm:text-xl leading-[1.05] text-white">{p.name}</h3>
+                      <h3 className="text-xl sm:text-2xl leading-[1]">{p.name}</h3>
                       {p.description && (
-                        <p className="text-xs line-clamp-2 mt-1.5 leading-relaxed text-white/60">{p.description}</p>
+                        <p className="text-xs line-clamp-2 mt-1.5 leading-relaxed">{p.description}</p>
                       )}
                       {p.allergens && p.allergens.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2.5" aria-label="Alérgenos">
@@ -768,7 +768,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                         </div>
                       )}
                       {p.stock !== null && p.stock > 0 && p.stock <= 5 && (
-                        <p className="text-[11px] font-bold text-violet-400 mt-2">Solo quedan {p.stock}</p>
+                        <p className="font-mono text-[11px] font-bold !text-indigo-700 mt-2 uppercase">Solo quedan {p.stock}</p>
                       )}
                     </div>
 
@@ -800,19 +800,19 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
       {activeTab === "orders" && (
         <main className="px-4 sm:px-8 pt-8 max-w-3xl mx-auto w-full flex-1">
           <p className="cv-eyebrow mb-2">En esta mesa</p>
-          <h2 className="text-4xl sm:text-5xl text-white mb-6">Tus pedidos</h2>
+          <h2 className="text-5xl sm:text-7xl mb-6">Tus pedidos</h2>
 
           {tableNumber && tableInfo && tableInfo.currentBillTotal > 0 && (
-            <div className="glass-panel rounded-3xl p-5 mb-5 flex items-center justify-between gap-4">
+            <div className="glass-panel rounded-2xl p-5 mb-5 flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs text-white/60">Llevas en la cuenta</p>
+                <p className="cv-eyebrow">Llevas en la cuenta</p>
                 <p className="cv-price !text-4xl mt-1">{tableInfo.currentBillTotal.toFixed(2).replace(".", ",")}<small>€</small></p>
               </div>
               <button
                 type="button"
                 disabled={callingWaiter}
                 onClick={() => handleCallWaiter("cuenta")}
-                className="h-12 px-5 rounded-full bg-ink text-black font-extrabold text-sm flex items-center gap-2 cursor-pointer hover:bg-accent disabled:opacity-60"
+                className="h-12 px-5 rounded-full bg-slate-900 text-white font-extrabold text-sm flex items-center gap-2 cursor-pointer hover:bg-indigo-600 disabled:opacity-60"
               >
                 <ReceiptText className="w-4 h-4" />
                 Pedir la cuenta
@@ -821,7 +821,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           )}
 
           {!tableNumber || myOrders.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-100 p-8 text-center" id="empty_orders_state">
+            <div className="cv-note p-8 text-center" id="empty_orders_state">
               <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-600">
                 {!tableNumber ? "Escanea el QR de tu mesa para pedir y seguir tus pedidos." : "Todavía no has pedido nada."}
@@ -829,7 +829,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
               <button
                 type="button"
                 onClick={() => setActiveTab("menu")}
-                className="mt-5 h-11 px-5 rounded-full bg-accent text-black text-sm font-extrabold cursor-pointer hover:bg-accent-soft"
+                className="mt-5 h-11 px-5 rounded-full bg-slate-900 text-white text-sm font-extrabold cursor-pointer"
               >
                 Ver la carta
               </button>
@@ -843,7 +843,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                     layout
                     variants={itemVariants}
                     key={order.id}
-                    className="bg-white p-4 rounded-3xl border border-slate-100"
+                    className="cv-note p-4"
                     id={`order_history_card_${order.id}`}
                   >
                     <div className="flex justify-between items-center gap-3 mb-3">
@@ -896,7 +896,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
             id="btn_bottom_basket"
           >
             <span className="flex flex-col items-start leading-tight">
-              <span className="text-[11px] font-semibold opacity-70">Tu cesta</span>
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest opacity-70">Tu cesta</span>
               <span className="text-lg tabular-nums">{cartTotal.toFixed(2).replace(".", ",")} €</span>
             </span>
             <span className="flex items-center gap-3 text-sm">
@@ -1040,7 +1040,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                   type="button"
                   disabled={loading || !canOrder}
                   onClick={submitOrder}
-                  className="w-full h-14 bg-accent hover:bg-accent-soft disabled:opacity-50 text-black font-extrabold text-base rounded-full flex justify-center items-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-extrabold text-base rounded-full flex justify-center items-center gap-2 cursor-pointer"
                   id="btn_send_kitchen"
                 >
                   {loading ? (
@@ -1087,7 +1087,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                   onClick={() => setSelectedProductForExtras(null)}
                   data-close-modal
                   aria-label="Cerrar"
-                  className="absolute top-3 right-3 w-10 h-10 grid place-items-center bg-black/40 hover:bg-black/60 text-white rounded-full cursor-pointer"
+                  className="absolute top-3 right-3 w-10 h-10 grid place-items-center bg-slate-900 text-white rounded-full cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1352,7 +1352,7 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
           }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{ left: p.x, top: p.y }}
-          className="fixed pointer-events-none z-50 rounded-full w-4 h-4 bg-accent shadow-lg"
+          className="fixed pointer-events-none z-50 rounded-full w-4 h-4 bg-slate-900"
           aria-hidden="true"
         />
       ))}

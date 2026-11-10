@@ -141,11 +141,10 @@ export default function BarView() {
   };
 
   const getTimeColor = (timestamp: string) => {
-    const mins = getElapsed(timestamp).mins;
-    if (mins >= 15) return "border-red-500/50";
-    if (mins >= 10) return "border-amber-500/50";
-    if (mins >= 5) return "border-yellow-500/30";
-    return "";
+    const { mins } = getElapsed(timestamp);
+    if (mins >= 15) return "urgent";
+    if (mins >= 10) return "late";
+    return "fresh";
   };
 
   useEffect(() => {
@@ -298,17 +297,13 @@ export default function BarView() {
                   exit={{ opacity: 0, y: -15, scale: 0.96 }}
                   transition={{ type: "spring", stiffness: 450, damping: 28 }}
                   key={order.id}
-                  className={`bg-slate-950/80 rounded-2xl border p-4.5 flex flex-col justify-between ${
-                    isCompleted 
-                      ? "border-emerald-950 opacity-60" 
-                      : isCooking 
-                      ? "border-indigo-900 shadow-md" 
-                      : "border-slate-800 bg-slate-950"
-                  } ${order.timestamp ? getTimeColor(order.timestamp) : ""}`}
+                  className="ticket p-4 flex flex-col justify-between"
+                  data-state={isCompleted ? "done" : isCooking ? "cooking" : undefined}
+                  data-age={!isCompleted && !isCooking && order.timestamp ? getTimeColor(order.timestamp) : undefined}
                   id={`bar_ticket_${order.id}`}
                 >
                   <div>
-                    <div className="flex justify-between items-center pb-2.5 border-b border-indigo-950/50 mb-3">
+                    <div className="flex justify-between items-center pb-2.5 border-b border-slate-800 mb-3">
                       <div className="flex items-center space-x-2">
                         <span className="text-xs font-black bg-indigo-900/50 text-indigo-200 px-2 py-0.5 rounded-md">
                           {order.tableName}

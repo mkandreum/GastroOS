@@ -24,7 +24,7 @@ function RoleFallback() {
   return (
     <div className="flex flex-1 items-center justify-center p-10">
       <div className="flex items-center gap-3 text-sm font-semibold text-ink-muted" role="status">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/15 border-t-accent" />
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
         Cargando
       </div>
     </div>
@@ -284,8 +284,6 @@ export default function App() {
     <ToastProvider>
     <ErrorBoundary>
     <div className={`app-root flex flex-col text-ink ${showNav ? "app-shell" : ""}`} data-role={selectedRole} id="unified_master_app">
-      <div className="ambient" aria-hidden="true"><i /><i /><i /></div>
-
       {/* NAVEGACIÓN: LiquidBar (cápsula de cristal con lente; la sesión vive en su propio círculo) */}
       {showNav && (
         <LiquidBar
@@ -303,9 +301,9 @@ export default function App() {
       {/* Selector de mesa para previsualizar la carta (oculto con QR real o en la instancia de cliente) */}
       {!isKioskMode && selectedRole === "cliente" && appType === "both" && (
         <section className="glass-panel mx-3 mt-3 rounded-full pl-4 pr-2 py-1.5 text-xs flex items-center justify-between gap-3 shrink-0 relative z-40">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-accent shrink-0">Vista previa</span>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] shrink-0">Vista previa</span>
           <label className="flex items-center gap-2 min-w-0">
-            <span className="text-white/60 hidden sm:inline">Mesa que simulas</span>
+            <span className="text-slate-600 hidden sm:inline">Mesa que simulas</span>
             <select
               value={selectedSimTable || 1}
               onChange={(e) => {
@@ -317,7 +315,7 @@ export default function App() {
                 window.history.pushState({}, "", url.toString());
                 setTableToken(null);
               }}
-              className="bg-white/10 text-white font-bold border border-white/10 px-3 py-1.5 cursor-pointer"
+              className="bg-slate-100 text-slate-900 font-bold border border-slate-900 px-3 py-1.5 cursor-pointer"
               id="simulated_table_picker"
               aria-label="Mesa simulada"
             >

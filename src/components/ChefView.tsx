@@ -129,10 +129,9 @@ export default function ChefView() {
 
   const getTimeColor = (timestamp: string) => {
     const { mins } = getElapsed(timestamp);
-    if (mins >= 15) return "border-red-500/50 bg-red-500/5";
-    if (mins >= 10) return "border-amber-500/50 bg-amber-500/5";
-    if (mins >= 5) return "border-yellow-500/30";
-    return "border-slate-800";
+    if (mins >= 15) return "urgent";
+    if (mins >= 10) return "late";
+    return "fresh";
   };
 
   const [now, setNow] = useState(Date.now());
@@ -334,7 +333,8 @@ export default function ChefView() {
                     exit={{ opacity: 0, y: -15, scale: 0.96 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     key={order.id} 
-                    className={`bg-slate-900 border ${getTimeColor(order.timestamp)} rounded-xl p-4 shadow-md hover:border-slate-700 transition`}
+                    className="ticket p-4"
+                    data-age={getTimeColor(order.timestamp)}
                     id={`kds_card_pending_${order.id}`}
                   >
                     <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-800">
@@ -447,7 +447,7 @@ export default function ChefView() {
                     exit={{ opacity: 0, y: -15, scale: 0.96 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     key={order.id} 
-                    className="bg-slate-900 border border-indigo-950/60 rounded-xl p-4 shadow-md border-l-4 border-l-amber-500"
+                    className="ticket p-4" data-state="cooking"
                     id={`kds_card_cooking_${order.id}`}
                   >
                     <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-800">
@@ -548,7 +548,7 @@ export default function ChefView() {
                     exit={{ opacity: 0, y: -15, scale: 0.96 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     key={order.id} 
-                    className="bg-slate-900 border border-emerald-950 rounded-xl p-4 opacity-75 shadow-sm"
+                    className="ticket p-4" data-state="done"
                     id={`kds_card_ready_${order.id}`}
                   >
                     <div className="flex justify-between items-start mb-1 pb-1.5 border-b border-slate-800">

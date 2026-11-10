@@ -62,7 +62,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
       >
         <p className="cv-eyebrow mb-5">Sala · Cocina · Barra · Caja</p>
         <h1 className="auth-wordmark">Gastro<em>OS</em></h1>
-        <p className="mt-6 max-w-sm text-base leading-relaxed text-white/70">
+        <p className="mt-6 max-w-sm text-lg leading-snug text-slate-700">
           El servicio entero en una pantalla: del QR de la mesa al ticket cobrado.
         </p>
       </motion.div>
@@ -71,10 +71,10 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-sm glass-panel rounded-[28px] p-7"
+        className="w-full max-w-sm glass-panel rounded-2xl p-7"
       >
-        <h2 className="text-2xl text-white">Acceso del personal</h2>
-        <p className="text-sm text-white/60 mt-1 mb-6">Entra con tu usuario para abrir tu puesto.</p>
+        <h2 className="text-3xl text-slate-900">Acceso del personal</h2>
+        <p className="text-sm text-slate-600 mt-1 mb-6">Entra con tu usuario para abrir tu puesto.</p>
 
         <AnimatePresence>
         {errorMsg && (
@@ -93,7 +93,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
 
         <form onSubmit={handleSubmit} aria-label="Formulario de inicio de sesión" className="space-y-4 text-sm">
           <div>
-            <label htmlFor="auth_input_user" className="block text-xs font-semibold text-white/70 mb-1.5">Usuario</label>
+            <label htmlFor="auth_input_user" className="block text-xs font-bold text-slate-700 mb-1.5">Usuario</label>
             <input
               type="text"
               value={username}
@@ -103,13 +103,13 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
-              className="w-full bg-slate-50 border border-slate-200 p-3.5 text-white"
+              className="w-full bg-white border-2 border-slate-900 p-3.5 text-slate-900"
               id="auth_input_user"
             />
           </div>
 
           <div>
-            <label htmlFor="auth_input_pass" className="block text-xs font-semibold text-white/70 mb-1.5">Contraseña</label>
+            <label htmlFor="auth_input_pass" className="block text-xs font-bold text-slate-700 mb-1.5">Contraseña</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -118,13 +118,13 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
                 placeholder="Tu contraseña"
                 required
                 autoComplete="current-password"
-                className="w-full bg-slate-50 border border-slate-200 p-3.5 pr-12 text-white"
+                className="w-full bg-white border-2 border-slate-900 p-3.5 pr-12 text-slate-900"
                 id="auth_input_pass"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 grid place-items-center rounded-full text-white/60 hover:text-white cursor-pointer"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 grid place-items-center rounded-full text-slate-500 hover:text-slate-900 cursor-pointer"
                 aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -135,7 +135,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 bg-accent text-black disabled:opacity-60 font-extrabold text-base rounded-full flex justify-center items-center gap-2 cursor-pointer hover:bg-accent-soft"
+            className="w-full h-14 bg-slate-900 text-white disabled:opacity-60 font-extrabold text-base rounded-full flex justify-center items-center gap-2 cursor-pointer hover:bg-indigo-600"
             id="auth_btn_submit"
           >
             {loading ? (
