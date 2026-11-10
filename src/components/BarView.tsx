@@ -227,13 +227,15 @@ export default function BarView() {
       <header className={`flex flex-col md:flex-row md:items-center justify-between border-b pb-5 mb-6 ${
         isHighContrast ? "border-yellow-400" : "border-indigo-950"
       }`}>
-        <div>
-          <span className={`text-xs font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
-            isHighContrast ? "text-yellow-400 border border-yellow-400 bg-black" : "text-sky-400 bg-sky-400/10"
-          }`}>KDS - Bar & Beverage Terminal</span>
-          <h1 className="text-2xl font-black tracking-tight text-white mt-1.5 flex items-center col-span-2">
-            <span>Control de Bebidas y Barra</span>
-          </h1>
+        <div className="flex items-end gap-8">
+          <div>
+            <span className="cv-eyebrow text-white">Bebidas en marcha</span>
+            <h1 className="display text-6xl sm:text-7xl text-white mt-1">Barra</h1>
+          </div>
+          <dl className="station-counts" aria-label="Resumen">
+            <div><dt>Por servir</dt><dd>{pending.length}</dd></div>
+            <div><dt>Listas</dt><dd>{ready.length}</dd></div>
+          </dl>
         </div>
         <div className="flex items-center space-x-3 mt-3 md:mt-0">
           <button
@@ -257,13 +259,6 @@ export default function BarView() {
             {isFullscreen ? "Salir Completo" : "Pantalla Completa"}
           </button>
           
-          <span className={`text-xs border rounded-lg px-3 py-1.5 font-bold ${
-            isHighContrast 
-              ? "bg-black text-yellow-400 border-yellow-400" 
-              : "bg-slate-800 border-slate-700 text-slate-300"
-          }`}>
-            Pendientes: {pending.length} | Listo en barra: {ready.length}
-          </span>
         </div>
       </header>
 

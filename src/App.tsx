@@ -71,6 +71,20 @@ export default function App() {
     };
   }, []);
 
+  // El tema lo decide administración: cada dispositivo lo vuelve a consultar cada 30 s y al volver a la pestaña.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      fetch("/api/app-config")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => { if (data && isTheme(data.theme) && data.theme !== document.documentElement.dataset.theme) applyTheme(data.theme); })
+        .catch(() => {});
+    };
+    const timer = setInterval(refresh, 30000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, []);
+
   useEffect(() => {
     if (activeTicketToPrint) {
       const timer = setTimeout(() => {

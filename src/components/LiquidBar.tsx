@@ -368,7 +368,7 @@ export default function LiquidBar({
   return (
     <nav className={`lb-root ${className}`} aria-label={ariaLabel} id={id} data-folded={folded || undefined}>
       <RefractionFilter id={capsuleFilter} width={capsuleSize.width} height={capsuleSize.height} rim={24} amount={24} />
-      <RefractionFilter id={lensFilter} width={lensBox.width} height={REST_H} rim={10} amount={12} dispersion={0.4} />
+      <RefractionFilter id={lensFilter} width={lensBox.width} height={REST_H} rim={8} amount={5} />
       {action && <RefractionFilter id={actionFilter} width={actionSize.width} height={actionSize.height} rim={24} amount={24} />}
 
       {items.length > 0 && (

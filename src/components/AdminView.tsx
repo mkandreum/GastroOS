@@ -10,7 +10,7 @@ import {
 import { 
   BarChart3, Settings, Table as TableIcon, BookOpen, Printer, Shield, ChevronRight, 
   Trash2, PlusCircle, Edit3, Check, Eye, Download, Info, RefreshCw, AlertTriangle, UserCheck,
-  ReceiptText, Palette, ScrollText, SwatchBook
+  ReceiptText, Palette, ScrollText, SwatchBook, ImageOff, Upload, X as XIcon
 } from "lucide-react";
 import { applyTheme, cachedTheme, THEMES, ThemeId } from "../utils/theme";
 import { useToast } from "./ToastProvider";
@@ -55,6 +55,7 @@ export default function AdminView() {
   const [prodImage, setProdImage] = useState("");
   const [theme, setTheme] = useState<ThemeId>(cachedTheme());
   const [themeSaving, setThemeSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [prodPrice, setProdPrice] = useState("");
   const [prodStock, setProdStock] = useState("");
   const [prodAllergens, setProdAllergens] = useState<Allergen[]>([]);
@@ -226,6 +227,32 @@ export default function AdminView() {
   };
 
   // OPERACIONES DE PRODUCTOS
+  // Reduce la foto en el navegador (máx. 1200 px, JPEG) y la sube al servidor.
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.84));
+      if (!blob) throw new Error("No se pudo procesar la imagen.");
+      const res = await fetch("/api/uploads", { method: "POST", headers: { "Content-Type": "image/jpeg", ...authHeaders() }, body: blob });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo subir la foto.");
+      setProdImage(data.url);
+    } catch (err: any) {
+      toast(err?.message || "No se pudo subir la foto.", "error");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const chooseTheme = async (next: ThemeId) => {
     if (next === theme) return;
     setThemeSaving(true);
@@ -258,7 +285,7 @@ export default function AdminView() {
       categoryId: prodCatId,
       name: prodName,
       description: prodDesc,
-      image: /^https:\/\//i.test(prodImage.trim()) ? prodImage.trim() : "default.jpg",
+      image: /^(https:\/\/|\/uploads\/)/i.test(prodImage.trim()) ? prodImage.trim() : "default.jpg",
       price: parseFloat(prodPrice),
       iva: parseInt(prodIva),
       stock: prodStock && prodStock !== "unlimited" ? parseInt(prodStock) : null,
@@ -789,7 +816,7 @@ export default function AdminView() {
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              <span>Resumen y Ventas</span>
+              <span>Ventas</span>
             </button>
 
             <button
@@ -799,7 +826,7 @@ export default function AdminView() {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>Cuidar la Carta</span>
+              <span>Carta</span>
             </button>
 
             <button
@@ -809,7 +836,7 @@ export default function AdminView() {
               }`}
             >
               <TableIcon className="w-4 h-4" />
-              <span>Mesas y QR Generador</span>
+              <span>Mesas y QR</span>
             </button>
 
             <button
@@ -819,7 +846,7 @@ export default function AdminView() {
               }`}
             >
               <Printer className="w-4 h-4" />
-              <span>Impresoras IP / Cola</span>
+              <span>Impresoras</span>
             </button>
 
             <button
@@ -829,7 +856,7 @@ export default function AdminView() {
               }`}
             >
               <ReceiptText className="w-4 h-4" />
-              <span>Historial Tickets</span>
+              <span>Tickets</span>
             </button>
 
             <button
@@ -839,7 +866,7 @@ export default function AdminView() {
               }`}
             >
               <Palette className="w-4 h-4" />
-              <span>Diseño Ticket</span>
+              <span>Ticket impreso</span>
             </button>
 
             <button
@@ -869,7 +896,7 @@ export default function AdminView() {
               }`}
             >
               <UserCheck className="w-4 h-4" />
-              <span>Personal / Usuarios</span>
+              <span>Personal</span>
             </button>
           </nav>
         </div>
@@ -1323,7 +1350,7 @@ export default function AdminView() {
         {activeTab === "catalog" && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-black text-slate-800">Cuidar la Carta y los Precios</h2>
+              <h2 className="display text-5xl sm:text-6xl text-slate-900">Carta</h2>
               <div className="flex space-x-2">
                 <button
                   type="button"
@@ -1380,8 +1407,8 @@ export default function AdminView() {
                   <div key={cat.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs" id={`catalog_group_${cat.id}`}>
                     <div className="flex justify-between items-center border-b border-slate-100 pb-3.5 mb-4">
                       <div>
-                        <h3 className="font-extrabold text-sm text-slate-900">{cat.name}</h3>
-                        <p className="text-[11px] text-slate-500">{cat.description || "Sin descripción de categoría"}</p>
+                        <h3 className="display !text-3xl text-slate-900">{cat.name}</h3>
+                        <p className="text-xs text-slate-500 mt-1">{cat.description || "Sin descripción"} · {catProducts.length} {catProducts.length === 1 ? "producto" : "productos"}</p>
                       </div>
                       <div className="flex space-x-1 text-xs">
                         <button
@@ -1424,12 +1451,19 @@ export default function AdminView() {
                             {catProducts.map(p => (
                               <tr key={p.id} className="hover:bg-slate-50/50">
                                 <td className="py-3">
-                                  <span className="font-extrabold text-slate-900 block">{p.name}</span>
-                                  {p.allergens.length > 0 && (
-                                    <span className="text-[10px] text-slate-500">Alérgenos: {p.allergens.join(", ")}</span>
-                                  )}
+                                  <div className="flex items-center gap-3">
+                                    <span className="thumb" aria-hidden="true">
+                                      {p.image && p.image !== "default.jpg" ? <img src={p.image} alt="" loading="lazy" /> : <ImageOff className="w-4 h-4" />}
+                                    </span>
+                                    <span className="min-w-0">
+                                      <span className="font-extrabold text-slate-900 block">{p.name}</span>
+                                      {p.allergens.length > 0 && (
+                                        <span className="text-[10px] text-slate-500">Alérgenos: {p.allergens.join(", ")}</span>
+                                      )}
+                                    </span>
+                                  </div>
                                 </td>
-                                <td className="py-3 font-bold">{p.price.toFixed(2)}€</td>
+                                <td className="py-3"><span className="display !text-xl">{p.price.toFixed(2).replace(".", ",")} €</span></td>
                                 <td className="py-3 font-mono">{p.iva}%</td>
                                 <td className="py-3">
                                   {p.stock !== null ? (
@@ -1497,7 +1531,7 @@ export default function AdminView() {
         {/* TAB 3: REGISTRO DE MESAS Y CODIGO QR */}
         {activeTab === "tables" && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800">Gestión de Mesas y Diseño del Salón</h2>
+            <h2 className="display text-5xl sm:text-6xl text-slate-900">Mesas</h2>
             
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
               Cada mesa del restaurante cuenta con un código QR único. Puedes crearlas, eliminarlas y organizar su posición en el plano del salón arrastrándolas.
@@ -1815,7 +1849,7 @@ export default function AdminView() {
         {/* TAB 4: CONFIGURADOR IMPRESORA IP */}
         {activeTab === "printer" && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800">Parámetros de Impresoras Térmicas Zebra (ZPL)</h2>
+            <h2 className="display text-5xl sm:text-6xl text-slate-900">Impresoras</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               
@@ -2082,7 +2116,7 @@ export default function AdminView() {
         {/* TAB 5: HISTORIAL DE TICKETS CERRADOS */}
         {activeTab === "tickets" && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800">Historial de Tickets Cerrados</h2>
+            <h2 className="display text-5xl sm:text-6xl text-slate-900">Tickets</h2>
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
               Revisa tickets ya cobrados. Para modificaciones, usa el panel de Camarero con autorización de Admin.
             </p>
@@ -2152,7 +2186,7 @@ export default function AdminView() {
         {/* TAB 6: GESTIÓN DE PERSONAL / USUARIOS */}
         {activeTab === "ticket-tpl" && ticketTpl && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800">Diseño de Ticket / Plantilla ZPL</h2>
+            <h2 className="display text-5xl sm:text-6xl text-slate-900">Ticket impreso</h2>
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
               Personaliza los textos y el tamaño del papel del ticket térmico. Los cambios se aplican automáticamente al ZPL que se envía a la impresora y reajustan las proporciones.
             </p>
@@ -2300,7 +2334,7 @@ export default function AdminView() {
 
         {activeTab === "audit" && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800">Auditoría</h2>
+            <h2 className="display text-5xl sm:text-6xl text-slate-900">Auditoría</h2>
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
               Registro de accesos, cobros, cambios de ticket, usuarios, catálogo y configuración sensible.
             </p>
@@ -2337,7 +2371,7 @@ export default function AdminView() {
 
         {activeTab === "users" && (
           <div className="space-y-6">
-            <h2 className="text-lg font-black text-slate-800">Gestión de Personal / Usuarios</h2>
+            <h2 className="display text-5xl sm:text-6xl text-slate-900">Personal</h2>
             
             <p className="text-xs text-slate-500 leading-relaxed max-w-2xl bg-white p-3.5 rounded-xl border border-slate-200">
               Registra las cuentas del personal. Sus permisos y accesos estarán determinados por el rol asignado. Los camareros, cocineros y baristas no tendrán acceso al panel de administración ni a los terminales de otros roles.
@@ -2643,17 +2677,37 @@ export default function AdminView() {
                 </div>
 
                 <div>
-                  <label htmlFor="prod_image_url" className="block text-[10px] font-bold text-slate-500 mb-1">Foto del plato (enlace https, opcional)</label>
-                  <input
-                    id="prod_image_url"
-                    type="url"
-                    inputMode="url"
-                    value={prodImage}
-                    onChange={(e) => setProdImage(e.target.value)}
-                    placeholder="https://…/plato.jpg"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-indigo-400 focus:bg-white"
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1">Sin foto se muestra un bloque de color con el icono de la categoría.</p>
+                  <span className="block text-[10px] font-bold text-slate-500 mb-1">Foto del plato (opcional)</span>
+                  <div className="flex items-center gap-3">
+                    <span className="thumb thumb-lg" aria-hidden="true">
+                      {prodImage ? <img src={prodImage} alt="" /> : <ImageOff className="w-5 h-5" />}
+                    </span>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <label className={`inline-flex items-center gap-2 h-10 px-4 rounded-full bg-slate-900 text-white text-xs font-extrabold cursor-pointer ${imageUploading ? "opacity-60 pointer-events-none" : ""}`}>
+                          <Upload className="w-4 h-4" />
+                          {imageUploading ? "Subiendo…" : prodImage ? "Cambiar foto" : "Subir foto"}
+                          <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleImageFile} disabled={imageUploading} />
+                        </label>
+                        {prodImage && (
+                          <button type="button" onClick={() => setProdImage("")} className="inline-flex items-center gap-1.5 h-10 px-3 rounded-full border border-slate-300 text-slate-700 text-xs font-bold cursor-pointer">
+                            <XIcon className="w-3.5 h-3.5" /> Quitar
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        id="prod_image_url"
+                        type="text"
+                        inputMode="url"
+                        aria-label="Enlace de la foto"
+                        value={prodImage}
+                        onChange={(e) => setProdImage(e.target.value)}
+                        placeholder="o pega un enlace https://…"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-700 outline-none focus:border-indigo-400 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1.5">JPG, PNG o WebP. Se reduce sola antes de subir. Sin foto se muestra un bloque de color con el icono de la categoría.</p>
                 </div>
 
                 <div>

@@ -5,6 +5,7 @@
 
 import express from "express";
 import path from "path";
+import fs from "fs";
 import net from "net";
 import helmet from "helmet";
 import compression from "compression";
@@ -937,6 +938,11 @@ function parseModifierGroups(value: unknown) {
   }).filter((group) => group.name && group.options.length > 0);
 }
 
+function parseImage(value: unknown): string {
+  const raw = text(value, 300);
+  return /^https:\/\/[^\s"'<>]+$/i.test(raw) || /^\/uploads\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(raw) ? raw : "default.jpg";
+}
+
 function parseAllergens(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => text(item, 40).toLowerCase()).filter(Boolean).slice(0, 20);
@@ -954,7 +960,7 @@ app.post("/api/products", requireRole("admin"), (req: any, res) => {
     name,
     description: text(req.body?.description, 500),
     price,
-    image: text(req.body?.image, 300) || "default.jpg",
+    image: parseImage(req.body?.image),
     allergens: parseAllergens(req.body?.allergens) as any,
     iva: integer(req.body?.iva, 0, 100, 10),
     available: req.body?.available !== false,
@@ -980,7 +986,7 @@ app.put("/api/products/:id", requireRole("admin"), (req: any, res) => {
   }
   if (req.body?.description !== undefined) updates.description = text(req.body.description, 500);
   if (req.body?.price !== undefined) updates.price = decimal(req.body.price, 0, 100000, 0);
-  if (req.body?.image !== undefined) updates.image = text(req.body.image, 300);
+  if (req.body?.image !== undefined) updates.image = parseImage(req.body.image);
   if (req.body?.allergens !== undefined) updates.allergens = parseAllergens(req.body.allergens);
   if (req.body?.iva !== undefined) updates.iva = integer(req.body.iva, 0, 100, 10);
   if (req.body?.available !== undefined) updates.available = Boolean(req.body.available);
@@ -1003,6 +1009,41 @@ app.delete("/api/products/:id", requireRole("admin"), (req: any, res) => {
   }
 });
 
+// Fotos de producto: se guardan junto a la base de datos y se sirven en /uploads.
+const UPLOAD_DIR = path.join(process.env.DB_DIR ? path.resolve(process.env.DB_DIR) : path.join(process.cwd(), "data"), "uploads");
+
+function sniffImage(buffer: Buffer): "jpg" | "png" | "webp" | null {
+  if (buffer.length < 12) return null;
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "jpg";
+  if (buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "png";
+  if (buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP") return "webp";
+  return null;
+}
+
+app.post("/api/uploads", requireRole("admin"), express.raw({ type: ["image/jpeg", "image/png", "image/webp"], limit: "4mb" }), (req: any, res) => {
+  const body = req.body;
+  if (!Buffer.isBuffer(body) || body.length === 0) return res.status(400).json({ error: "Envía una imagen JPG, PNG o WebP." });
+  // La extensión sale del contenido real, no de lo que diga la cabecera.
+  const kind = sniffImage(body);
+  if (!kind) return res.status(400).json({ error: "El archivo no es una imagen JPG, PNG o WebP válida." });
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const name = `${crypto.randomUUID()}.${kind}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, name), body);
+  dbInstance.logAudit({ actorId: req.user.sub, actorName: req.user.name, action: "upload", entity: "image", entityId: name, details: { bytes: body.length } });
+  res.status(201).json({ url: `/uploads/${name}` });
+});
+
+app.get("/uploads/:name", (req, res) => {
+  const name = req.params.name;
+  if (!/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(name)) return res.status(404).end();
+  const file = path.join(UPLOAD_DIR, name);
+  if (!fs.existsSync(file)) return res.status(404).end();
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.type(name.endsWith(".jpg") ? "image/jpeg" : name.endsWith(".png") ? "image/png" : "image/webp");
+  fs.createReadStream(file).pipe(res);
+});
+
 app.post("/api/catalog/import", requireRole("admin"), (req: any, res) => {
   const mode = req.body?.mode;
   const items = req.body?.items;
@@ -1017,7 +1058,7 @@ app.post("/api/catalog/import", requireRole("admin"), (req: any, res) => {
       name: text(item?.name, 120),
       description: text(item?.description, 500),
       price: decimal(item?.price, 0, 100000, 0),
-      image: text(item?.image, 300) || "default.jpg",
+      image: parseImage(item?.image),
       allergens: parseAllergens(item?.allergens),
       iva: Number.isFinite(rawIva) && rawIva >= 0 && rawIva <= 100 ? Math.round(rawIva) : 10,
       available: item?.available !== false && item?.available !== 0 && item?.available !== "false",

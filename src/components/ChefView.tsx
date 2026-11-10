@@ -260,13 +260,16 @@ export default function ChefView() {
       <header className={`flex flex-col md:flex-row md:items-center justify-between border-b pb-5 mb-6 ${
         isHighContrast ? "border-yellow-400" : "border-slate-800"
       }`}>
-        <div>
-          <span className={`text-xs font-mono font-bold tracking-wider px-2.5 py-1 rounded-full uppercase ${
-            isHighContrast ? "text-yellow-400 border border-yellow-400 bg-black" : "text-rose-500 bg-rose-500/10"
-          }`}>KDS - Kitchen Display System</span>
-          <h1 className="text-2xl font-black tracking-tight text-white mt-1.5 flex items-center col-span-2">
-            <span>Terminal de Preparación de Cocina</span>
-          </h1>
+        <div className="flex items-end gap-8">
+          <div>
+            <span className="cv-eyebrow text-white">Comandas en marcha</span>
+            <h1 className="display text-6xl sm:text-7xl text-white mt-1">Cocina</h1>
+          </div>
+          <dl className="station-counts" aria-label="Resumen">
+            <div><dt>Por hacer</dt><dd>{pendingOrders.length}</dd></div>
+            <div><dt>Al fuego</dt><dd>{cookingOrders.length}</dd></div>
+            <div><dt>En el pase</dt><dd>{readyOrders.length}</dd></div>
+          </dl>
         </div>
         <div className="flex items-center space-x-3 mt-3 md:mt-0">
           {/* BOTONES DE CONTROL DE UI */}
@@ -291,13 +294,6 @@ export default function ChefView() {
             {isFullscreen ? "Salir Completo" : "Pantalla Completa"}
           </button>
           
-          <span className={`text-xs border rounded-lg px-3 py-1.5 font-bold ${
-            isHighContrast 
-              ? "bg-black text-yellow-400 border-yellow-400" 
-              : "bg-slate-800 border-slate-700 text-slate-300"
-          }`}>
-            Pendientes: {pendingOrders.length} | Preparando: {cookingOrders.length}
-          </span>
         </div>
       </header>
 
@@ -305,10 +301,10 @@ export default function ChefView() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="chef_kds_columns">
         
         {/* COLUMNA 1: PENDIENTES DE ENTRAR (Rojo/Amber) */}
-        <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
-          <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-            <span>1. Por Preparar ({pendingOrders.length})</span>
-            <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">FUEGO</span>
+        <div className="station-col flex flex-col min-h-[70vh]">
+          <h2 className="station-col-head">
+            <span>Por hacer</span>
+            <span className="station-col-n">{pendingOrders.length}</span>
           </h2>
 
           <div className="space-y-4 overflow-y-auto flex-1 max-h-[65vh]">
@@ -419,10 +415,10 @@ export default function ChefView() {
         </div>
 
         {/* COLUMNA 2: EN FUEGO / SE ESTÁ PREPARANDO (Indigo/Orange) */}
-        <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
-          <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-            <span>2. En los Fogones ({cookingOrders.length})</span>
-            <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">MARCHANDO</span>
+        <div className="station-col flex flex-col min-h-[70vh]">
+          <h2 className="station-col-head">
+            <span>Al fuego</span>
+            <span className="station-col-n">{cookingOrders.length}</span>
           </h2>
 
           <div className="space-y-4 overflow-y-auto flex-1 max-h-[65vh]">
@@ -520,10 +516,10 @@ export default function ChefView() {
         </div>
 
         {/* COLUMNA 3: PREPARADOS/ESPERANDO SERVICIO (Verde/Gray) */}
-        <div className="bg-slate-950/45 p-4 rounded-2xl border border-slate-800 flex flex-col min-h-[70vh]">
-          <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-            <span>3. Listos en pase ({readyOrders.length})</span>
-            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">PASE</span>
+        <div className="station-col flex flex-col min-h-[70vh]">
+          <h2 className="station-col-head">
+            <span>En el pase</span>
+            <span className="station-col-n">{readyOrders.length}</span>
           </h2>
 
           <div className="space-y-4 overflow-y-auto flex-1 max-h-[65vh]">
