@@ -310,7 +310,9 @@ export default function App() {
           onSelect={(key) => setSelectedRole(key as UserRole)}
           action={currentUser
             ? { label: `Cerrar sesión (${currentUser.name})`, icon: LogOut, onClick: handleLogout, badge: true }
-            : { label: "Acceso del personal", icon: LogIn, onClick: () => setSelectedRole("admin"), tinted: selectedRole !== "cliente" }}
+            : selectedRole === "cliente"
+              ? { label: "Acceso del personal", icon: LogIn, onClick: () => setSelectedRole("admin") }
+              : undefined /* ya está en la pantalla de acceso: el botón sobraría */}
         />
       )}
 

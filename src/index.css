@@ -479,7 +479,9 @@ button:active { transform: scale(0.975); }
 .animate-pop-in { animation: pop-in 180ms var(--ease-out) 1; }
 
 /* ---------- Acceso ---------- */
-.auth-wordmark { font-family: var(--display); font-variation-settings: "SOFT" 0, "WONK" 1; font-weight: var(--display-hero-weight); letter-spacing: var(--display-hero-tracking); text-transform: var(--display-case); line-height: 0.82; font-size: clamp(72px, 15vw, 200px); color: var(--page-fg); }
+/* El rótulo se mide contra su columna, no contra la pantalla: nunca se mete bajo la tarjeta. */
+.auth-brand { container-type: inline-size; }
+.auth-wordmark { font-family: var(--display); font-variation-settings: "SOFT" 0, "WONK" 1; font-weight: var(--display-hero-weight); letter-spacing: var(--display-hero-tracking); text-transform: var(--display-case); line-height: 0.82; font-size: clamp(56px, 20cqw, 190px); color: var(--page-fg); white-space: nowrap; }
 .auth-wordmark em { font-style: var(--display-em-style); font-weight: var(--display-em-weight); color: var(--brand); }
 
 /* ---------- Carta de cliente ---------- */

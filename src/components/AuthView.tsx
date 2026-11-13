@@ -53,12 +53,12 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col lg:flex-row lg:items-center justify-center gap-10 lg:gap-20 px-5 py-10 lg:px-16 font-sans" id="auth_view_box">
+    <div className="min-h-[100dvh] flex flex-col lg:flex-row lg:items-center justify-center gap-10 lg:gap-16 px-5 py-10 lg:px-16 font-sans" id="auth_view_box">
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-xl"
+        className="auth-brand w-full lg:flex-1 lg:max-w-3xl min-w-0"
       >
         <p className="cv-eyebrow mb-5">Sala · Cocina · Barra · Caja</p>
         <h1 className="auth-wordmark">Gastro<em>OS</em></h1>
@@ -71,7 +71,7 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-sm glass-panel rounded-2xl p-7"
+        className="w-full max-w-sm shrink-0 glass-panel rounded-2xl p-7"
       >
         <h2 className="text-3xl text-slate-900">Acceso del personal</h2>
         <p className="text-sm text-slate-600 mt-1 mb-6">Entra con tu usuario para abrir tu puesto.</p>
