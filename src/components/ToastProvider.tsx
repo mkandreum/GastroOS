@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { showIsland, icons } from "./LiquidUI";
 import { motion, AnimatePresence } from "motion/react";
 
 type ToastType = "success" | "error" | "warning" | "info";
@@ -23,6 +24,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const toastFn = useCallback((message: string, type: ToastType = "info") => {
+    const accent = { success: "#30D158", error: "#FF453A", warning: "#FF9F0A", info: "#0A84FF" }[type];
+    const icon = { success: icons.check, error: icons.alert, warning: icons.alert, info: icons.info }[type];
+    if (showIsland({ title: message, icon, accent, duration: type === "error" ? 4200 : 3200 })) return;
     const id = nextId++;
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {

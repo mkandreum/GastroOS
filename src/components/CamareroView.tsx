@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { showIsland, icons, LiquidBadge, usePullRefresh } from "./LiquidUI";
 import { 
   motion, AnimatePresence 
 } from "motion/react";
@@ -186,8 +187,12 @@ export default function CamareroView() {
     if (readyOrders.length > prevReadyCount && prevReadyCount > 0) {
       const newOnes = readyOrders.slice(0, readyOrders.length - prevReadyCount);
       const names = newOnes.map(o => o.tableName).join(", ");
-      setPushBanner({ msg: `Nuevos platos listos: ${names}`, type: "success" });
-      setTimeout(() => setPushBanner(null), 4000);
+      const dishes = newOnes.reduce((n, o) => n + o.items.reduce((m, l) => m + l.quantity, 0), 0);
+      // Cocina → sala: la isla crece arriba con la mesa lista.
+      if (!showIsland({ title: newOnes.length === 1 ? `${names} lista` : `Listas: ${names}`, text: `Cocina → sala · ${dishes} plato${dishes === 1 ? "" : "s"}`, icon: icons.check, accent: "#30D158", duration: 4500 })) {
+        setPushBanner({ msg: `Nuevos platos listos: ${names}`, type: "success" });
+        setTimeout(() => setPushBanner(null), 4000);
+      }
       triggerHaptic();
       playNotificationSound();
     }
@@ -197,6 +202,7 @@ export default function CamareroView() {
   // Alerta de llamadas de mesas activas
   useEffect(() => {
     if (waiterCalls.length > prevCallsCount && prevCallsCount > 0) {
+      showIsland({ title: "Te llaman desde sala", text: `${waiterCalls.length} llamada${waiterCalls.length === 1 ? "" : "s"} activa${waiterCalls.length === 1 ? "" : "s"}`, icon: icons.bell, accent: "#FF9F0A", duration: 4500 });
       triggerHaptic();
       playNotificationSound();
     }
@@ -228,6 +234,9 @@ export default function CamareroView() {
       console.error("Fallo obteniendo mesas y órdenes:", err);
     }
   };
+
+  // Arriba del todo, tira hacia abajo: gota de cristal y mesas y platos al día.
+  usePullRefresh(() => fetchTablesAndOrders());
 
   const handleResolveCall = async (callId: string) => {
     try {
@@ -962,7 +971,8 @@ export default function CamareroView() {
           <div className="bg-white p-4 rounded-2xl border border-slate-200">
             <h2 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2.5 flex items-center space-x-1.5">
               <Bell className="w-4 h-4 text-indigo-600 animate-pulse" />
-              <span>Platos listos para Servir ({readyOrders.length})</span>
+              <span>Platos listos para servir</span>
+              <LiquidBadge value={readyOrders.length} color="#16a34a" />
             </h2>
 
             {readyOrders.length === 0 ? (

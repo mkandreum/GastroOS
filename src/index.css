@@ -608,3 +608,9 @@ h2.station-col-head { display: flex; align-items: baseline; justify-content: spa
 .thumb { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; overflow: hidden; background: var(--color-slate-100); color: var(--color-slate-400); border: 1px solid var(--color-slate-200); }
 .thumb-lg { width: 84px; height: 84px; border-radius: 12px; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Cristal líquido (liquidbar): chips sobre las fotos de la carta y contador de la cesta */
+.cv-card-media { position: relative; }
+.cv-chips { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 2; }
+.cv-chips .lui-chip, .cv-chips .lui-chip-r { padding: 4px 9px; font-size: 11px; font-weight: 800; color: #fff; border-radius: 999px; white-space: nowrap; }
+.cv-qty-badge { position: absolute; top: 8px; right: 8px; z-index: 3; }

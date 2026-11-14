@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { LiquidToggle, useChartLens } from "./LiquidUI";
 import { 
   motion, AnimatePresence
 } from "motion/react";
@@ -36,6 +37,7 @@ export default function AdminView() {
   
   // Estados de interacción para los gráficos SVG interactivos
   const [hoveredHourPoint, setHoveredHourPoint] = useState<any | null>(null);
+  const hourChartRef = useRef<HTMLDivElement>(null);
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
   const [hoveredTableIndex, setHoveredTableIndex] = useState<number | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
@@ -776,6 +778,17 @@ export default function AdminView() {
     "gluten", "lacteos", "frutos_secos", "huevo", "pescado", "soja", "crustaceos", "moluscos", "sulfitos"
   ];
 
+  // Mantén pulsado sobre la gráfica de ventas por hora: lupa de cristal y la venta de esa hora.
+  useChartLens(hourChartRef, (x, rect) => {
+    const data = stats?.salesByHour || [];
+    if (!data.length) return null;
+    const vx = (x / rect.width) * 600;
+    const i = Math.max(0, Math.min(data.length - 1, Math.round(((vx - 50) / 520) * (data.length - 1))));
+    const maxVal = Math.max(...data.map((d: any) => d.sales), 50) * 1.15;
+    const y = (180 - (data[i].sales / maxVal) * 160) * (rect.height / 220);
+    return { key: i, value: `${data[i].sales.toFixed(2)} €`, label: String(data[i].hour), y };
+  }, { zoom: 1.7 }, [activeTab, !!stats]);
+
   return (
     <div className="min-h-screen font-sans flex flex-col md:flex-row pb-12" id="admin_root">
       
@@ -971,6 +984,7 @@ export default function AdminView() {
               </div>
               
               <div className="w-full overflow-hidden select-none">
+                <div ref={hourChartRef}>
                 <svg viewBox="0 0 600 220" className="w-full h-auto overflow-visible">
                   <defs>
                     <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1083,6 +1097,7 @@ export default function AdminView() {
                     );
                   })()}
                 </svg>
+                </div>
               </div>
             </div>
 
@@ -1895,13 +1910,7 @@ export default function AdminView() {
                   </div>
 
                   <div className="flex items-center space-x-2 pt-1 pb-2">
-                    <input
-                      type="checkbox"
-                      id="ip_printer_toggle"
-                      checked={printerEnabled}
-                      onChange={(e) => setPrinterEnabled(e.target.checked)}
-                      className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                    />
+                    <LiquidToggle id="ip_printer_toggle" checked={printerEnabled} onChange={setPrinterEnabled} accent="#4f46e5" />
                     <label htmlFor="ip_printer_toggle" className="font-bold cursor-pointer">Impresora en funcionamiento (Habilitar)</label>
                   </div>
 
@@ -2011,13 +2020,7 @@ export default function AdminView() {
                   </div>
 
                   <div className="flex items-center space-x-2 pt-1 pb-2">
-                    <input
-                      type="checkbox"
-                      id="ticket_printer_toggle"
-                      checked={ticketPrinterEnabled}
-                      onChange={(e) => setTicketPrinterEnabled(e.target.checked)}
-                      className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                    />
+                    <LiquidToggle id="ticket_printer_toggle" checked={ticketPrinterEnabled} onChange={setTicketPrinterEnabled} accent="#4f46e5" />
                     <label htmlFor="ticket_printer_toggle" className="font-bold cursor-pointer">Impresora de tickets habilitada</label>
                   </div>
 

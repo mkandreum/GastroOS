@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
+import { LiquidChip, LiquidBadge } from "./LiquidUI";
 import { 
   motion, AnimatePresence 
 } from "motion/react";
@@ -108,6 +109,8 @@ const STATUS_COPY: Record<string, { label: string; tone: string; progress: strin
   servido: { label: "Servido", tone: "bg-slate-100 text-slate-500", progress: "w-full bg-slate-400" },
   cancelado: { label: "Anulado", tone: "bg-red-100 text-red-600", progress: "w-0" }
 };
+
+const formatPrice = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
 export default function ClientView({ tableNumber, tableToken = null, onUnlockRoles, isKioskMode = false, hasGlobalNav = false }: ClientViewProps) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -749,7 +752,15 @@ export default function ClientView({ tableNumber, tableToken = null, onUnlockRol
                     ) : (
                       getCategoryIcon(categories.find((category) => category.id === p.categoryId)?.icon, p.name)
                     )}
-                    {inCartQty > 0 && <span className="cv-qty" aria-label={`${inCartQty} en la cesta`}>{inCartQty}</span>}
+                    {/* Chips de cristal sobre la foto: precio y, si queda poco, cuántas quedan. */}
+                    {p.image && p.image !== "default.jpg" && (
+                      <div className="cv-chips">
+                        <LiquidChip delay={120}>{formatPrice(p.price)}</LiquidChip>
+                        {soldOut ? <LiquidChip delay={200} tint="rgba(255,69,58,.45)">Agotado</LiquidChip>
+                          : p.stock !== null && p.stock <= 5 ? <LiquidChip delay={200} tint="rgba(255,159,10,.4)">Quedan {p.stock}</LiquidChip> : null}
+                      </div>
+                    )}
+                    {inCartQty > 0 && <LiquidBadge value={inCartQty} className="cv-qty-badge" color="var(--cv-accent, #1f7a4d)" />}
                   </div>
 
                   <div className="flex-1 min-w-0 flex flex-col justify-between p-3.5 sm:p-4 gap-3">
